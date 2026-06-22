@@ -20,11 +20,18 @@ npm run lint
 npm run build
 ```
 
+Copy `.env.example` to `.env`, configure PostgreSQL, then initialize and seed it:
+
+```bash
+npx prisma migrate dev --name init
+SEED_ADMIN_PASSWORD='use-a-strong-unique-password' npx prisma db seed
+```
+
 ## Current integration status
 
-The public route surface, responsive design system, bilingual content, forms, API validation, CMS route shell, sitemap, and robots configuration are implemented. API submissions currently validate and acknowledge requests but intentionally do not persist them.
+The public route surface, responsive design system, bilingual content, forms, API validation, CMS route shell, sitemap, robots configuration, environment contract, complete Prisma schema, and seed data are implemented. API submissions currently validate and acknowledge requests but intentionally do not persist them.
 
-Production deployment still requires PostgreSQL/Prisma persistence, Better Auth sessions and role checks, Supabase Storage, Upstash rate limiting and caching, publication/audit workflows, and database-backed CMS editors. Do not deploy the submission or back-office routes as production-ready until those integrations are complete.
+Production deployment still requires wiring PostgreSQL queries into routes, Better Auth sessions and role checks, Supabase Storage, Upstash rate limiting and caching, publication/audit workflows, and database-backed CMS editors. Do not deploy the submission or back-office routes as production-ready until those integrations are complete.
 
 ## Team
 

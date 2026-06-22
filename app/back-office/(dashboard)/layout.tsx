@@ -1,0 +1,1 @@
+import {Sidebar} from "@/components/back-office/sidebar"; export default function DashboardLayout({children}:{children:React.ReactNode}){return <div className="min-h-screen md:grid md:grid-cols-[250px_1fr]"><Sidebar/><main className="p-5 md:p-10">{children}</main></div>}

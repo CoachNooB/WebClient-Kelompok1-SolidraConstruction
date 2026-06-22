@@ -5,8 +5,8 @@ Bilingual corporate website and back-office foundation built with Next.js App Ro
 ## Local development
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open `http://localhost:3000`; the root redirects to Indonesian at `/id`. English is available at `/en`, and the CMS shell is at `/back-office`.
@@ -14,10 +14,10 @@ Open `http://localhost:3000`; the root redirects to Indonesian at `/id`. English
 ## Quality checks
 
 ```bash
-npm test
-npm run typecheck
-npm run lint
-npm run build
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm build
 ```
 
 Copy `.env.example` to `.env`, configure PostgreSQL, then initialize and seed it:

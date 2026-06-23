@@ -5,23 +5,33 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["solidra"]
 }
 
 enum Locale {
   ID
   EN
+
+  @@map("locales")
+  @@schema("solidra")
 }
 
 enum UserRole {
   SUPER_ADMIN
   EDITOR
   REVIEWER
+
+  @@map("user_roles")
+  @@schema("solidra")
 }
 
 enum ContentStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+
+  @@map("content_statuses")
+  @@schema("solidra")
 }
 
 enum VacancyStatus {
@@ -29,6 +39,9 @@ enum VacancyStatus {
   OPEN
   CLOSED
   ARCHIVED
+
+  @@map("vacancy_statuses")
+  @@schema("solidra")
 }
 
 enum ContactStatus {
@@ -36,6 +49,9 @@ enum ContactStatus {
   IN_PROGRESS
   RESOLVED
   SPAM
+
+  @@map("contact_statuses")
+  @@schema("solidra")
 }
 
 enum ApplicationStatus {
@@ -44,6 +60,9 @@ enum ApplicationStatus {
   SHORTLISTED
   REJECTED
   HIRED
+
+  @@map("application_statuses")
+  @@schema("solidra")
 }
 
 enum EmploymentType {
@@ -51,6 +70,9 @@ enum EmploymentType {
   PART_TIME
   CONTRACT
   INTERNSHIP
+
+  @@map("employment_types")
+  @@schema("solidra")
 }
 
 enum SectionType {
@@ -72,80 +94,100 @@ enum SectionType {
   PROCESS
   VACANCIES
   CTA
+
+  @@map("section_types")
+  @@schema("solidra")
 }
 
 enum MediaVisibility {
   PUBLIC
   PRIVATE
+
+  @@map("media_visibilities")
+  @@schema("solidra")
 }
 
 enum NavigationLocation {
   HEADER
   FOOTER
+
+  @@map("navigation_locations")
+  @@schema("solidra")
 }
 
 model User {
-  id             String           @id @default(cuid())
+  id             String           @id @default(cuid()) @map("id")
   name           String
   email          String           @unique
-  emailVerified  Boolean          @default(false)
+  emailVerified  Boolean          @default(false) @map("email_verified")
   image          String?
   role           UserRole         @default(EDITOR)
   active         Boolean          @default(true)
-  lastLoginAt    DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  lastLoginAt    DateTime?        @map("last_login_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
   sessions       Session[]
   accounts       Account[]
   publishedPages Page[]           @relation("PagePublisher")
   media          MediaAsset[]
   notes          SubmissionNote[]
   auditLogs      AuditLog[]
+  pageRevisions PageRevision[] @relation("RevisionAuthor")
+  publishedRevisions PageRevision[] @relation("RevisionPublisher")
+
+  @@map("users")
+  @@schema("solidra")
 }
 
 model Session {
   id        String   @id @default(cuid())
-  expiresAt DateTime
+  expiresAt DateTime @map("expires_at")
   token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([userId], map: "sessions_user_id_idx")
+  @@map("sessions")
+  @@schema("solidra")
 }
 
 model Account {
   id                    String    @id @default(cuid())
-  accountId             String
-  providerId            String
-  userId                String
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
   scope                 String?
   password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([providerId, accountId])
-  @@index([userId])
+  @@unique([providerId, accountId], map: "accounts_provider_id_account_id_key")
+  @@index([userId], map: "accounts_user_id_idx")
+  @@map("accounts")
+  @@schema("solidra")
 }
 
 model Verification {
   id         String   @id @default(cuid())
   identifier String
   value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
-  @@index([identifier])
+  @@index([identifier], map: "verifications_identifier_idx")
+  @@map("verifications")
+  @@schema("solidra")
 }
 
 model Page {
@@ -153,72 +195,158 @@ model Page {
   key          String            @unique
   slug         String            @unique
   status       ContentStatus     @default(DRAFT)
-  publishedAt  DateTime?
-  publisherId  String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  publishedAt  DateTime?         @map("published_at")
+  publisherId  String?           @map("publisher_id")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
   publisher    User?             @relation("PagePublisher", fields: [publisherId], references: [id])
   translations PageTranslation[]
   sections     PageSection[]
+  revisions    PageRevision[] @relation("PageRevisions")
+  publishedRevisionId String? @unique @map("published_revision_id")
+  publishedRevision PageRevision? @relation("PublishedRevision", fields: [publishedRevisionId], references: [id], onDelete: Restrict)
+
+  @@map("pages")
+  @@schema("solidra")
+}
+
+model PageRevision {
+  id          String   @id @default(cuid())
+  pageId      String   @map("page_id")
+  version     Int
+  immutable   Boolean  @default(false)
+  authorId    String   @map("author_id")
+  publisherId String?  @map("publisher_id")
+  publishedAt DateTime? @map("published_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  page        Page     @relation("PageRevisions", fields: [pageId], references: [id], onDelete: Cascade)
+  publishedFor Page?   @relation("PublishedRevision")
+  author      User     @relation("RevisionAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  publisher   User?    @relation("RevisionPublisher", fields: [publisherId], references: [id], onDelete: Restrict)
+  translations PageRevisionTranslation[]
+  sections    PageSectionRevision[]
+
+  @@unique([pageId, version], map: "page_revisions_page_id_version_key")
+  @@index([pageId, immutable], map: "page_revisions_page_id_immutable_idx")
+  @@map("page_revisions")
+  @@schema("solidra")
+}
+
+model PageRevisionTranslation {
+  id             String   @id @default(cuid())
+  revisionId     String   @map("revision_id")
+  locale         Locale
+  title          String
+  description    String
+  seoTitle       String?  @map("seo_title")
+  seoDescription String?  @map("seo_description")
+  revision       PageRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+
+  @@unique([revisionId, locale], map: "page_revision_translations_revision_id_locale_key")
+  @@map("page_revision_translations")
+  @@schema("solidra")
+}
+
+model PageSectionRevision {
+  id           String      @id @default(cuid())
+  revisionId   String      @map("revision_id")
+  type         SectionType
+  order        Int
+  visible      Boolean     @default(true)
+  config       Json?
+  mediaId      String?     @map("media_id")
+  revision     PageRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  media        MediaAsset? @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  translations PageSectionRevisionTranslation[]
+
+  @@unique([revisionId, order], map: "page_section_revisions_revision_id_order_key")
+  @@map("page_section_revisions")
+  @@schema("solidra")
+}
+
+model PageSectionRevisionTranslation {
+  id        String      @id @default(cuid())
+  sectionId String      @map("section_id")
+  locale    Locale
+  heading   String?
+  body      String?
+  ctaLabel  String?     @map("cta_label")
+  ctaUrl    String?     @map("cta_url")
+  section   PageSectionRevision @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, locale], map: "page_section_revision_translations_section_id_locale_key")
+  @@map("page_section_revision_translations")
+  @@schema("solidra")
 }
 
 model PageTranslation {
   id             String  @id @default(cuid())
-  pageId         String
+  pageId         String  @map("page_id")
   locale         Locale
   title          String
   description    String
-  seoTitle       String?
-  seoDescription String?
+  seoTitle       String? @map("seo_title")
+  seoDescription String? @map("seo_description")
   page           Page    @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
-  @@unique([pageId, locale])
+  @@unique([pageId, locale], map: "page_translations_page_id_locale_key")
+  @@map("page_translations")
+  @@schema("solidra")
 }
 
 model PageSection {
   id           String                   @id @default(cuid())
-  pageId       String
+  pageId       String                   @map("page_id")
   type         SectionType
   order        Int
   visible      Boolean                  @default(true)
   config       Json?
-  mediaId      String?
+  mediaId      String?                  @map("media_id")
   page         Page                     @relation(fields: [pageId], references: [id], onDelete: Cascade)
   media        MediaAsset?              @relation(fields: [mediaId], references: [id], onDelete: Restrict)
   translations PageSectionTranslation[]
 
-  @@unique([pageId, order])
+  @@unique([pageId, order], map: "page_sections_page_id_order_key")
+  @@map("page_sections")
+  @@schema("solidra")
 }
 
 model PageSectionTranslation {
   id        String      @id @default(cuid())
-  sectionId String
+  sectionId String      @map("section_id")
   locale    Locale
   heading   String?
   body      String?
-  ctaLabel  String?
-  ctaUrl    String?
+  ctaLabel  String?     @map("cta_label")
+  ctaUrl    String?     @map("cta_url")
   section   PageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
-  @@unique([sectionId, locale])
+  @@unique([sectionId, locale], map: "page_section_translations_section_id_locale_key")
+  @@map("page_section_translations")
+  @@schema("solidra")
 }
 
 model MediaAsset {
   id          String          @id @default(cuid())
-  storagePath String          @unique
-  fileName    String
-  mimeType    String
+  storagePath String          @unique @map("storage_path")
+  fileName    String          @map("file_name")
+  mimeType    String          @map("mime_type")
   size        Int
   width       Int?
   height      Int?
-  altId       String?
-  altEn       String?
+  altId       String?         @map("alt_id")
+  altEn       String?         @map("alt_en")
   visibility  MediaVisibility @default(PUBLIC)
-  ownerId     String
-  createdAt   DateTime        @default(now())
+  ownerId     String          @map("owner_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
   owner       User            @relation(fields: [ownerId], references: [id])
   sections    PageSection[]
   projects    Project[]
+  revisionSections PageSectionRevision[]
+
+  @@map("media_assets")
+  @@schema("solidra")
 }
 
 model NavigationItem {
@@ -228,29 +356,36 @@ model NavigationItem {
   url          String
   external     Boolean                     @default(false)
   visible      Boolean                     @default(true)
-  parentId     String?
+  parentId     String?                     @map("parent_id")
   parent       NavigationItem?             @relation("NavigationTree", fields: [parentId], references: [id])
   children     NavigationItem[]            @relation("NavigationTree")
   translations NavigationItemTranslation[]
 
-  @@unique([location, order, parentId])
+  @@unique([location, order, parentId], map: "navigation_items_location_order_parent_id_key")
+  @@map("navigation_items")
+  @@schema("solidra")
 }
 
 model NavigationItemTranslation {
   id     String         @id @default(cuid())
-  itemId String
+  itemId String         @map("item_id")
   locale Locale
   label  String
   item   NavigationItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
-  @@unique([itemId, locale])
+  @@unique([itemId, locale], map: "navigation_item_translations_item_id_locale_key")
+  @@map("navigation_item_translations")
+  @@schema("solidra")
 }
 
 model SiteSetting {
   id        String   @id @default(cuid())
   key       String   @unique
   value     Json
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+  @@schema("solidra")
 }
 
 model FooterGroup {
@@ -259,21 +394,26 @@ model FooterGroup {
   visible      Boolean                  @default(true)
   translations FooterGroupTranslation[]
   links        FooterLink[]
+
+  @@map("footer_groups")
+  @@schema("solidra")
 }
 
 model FooterGroupTranslation {
   id      String      @id @default(cuid())
-  groupId String
+  groupId String      @map("group_id")
   locale  Locale
   title   String
   group   FooterGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  @@unique([groupId, locale])
+  @@unique([groupId, locale], map: "footer_group_translations_group_id_locale_key")
+  @@map("footer_group_translations")
+  @@schema("solidra")
 }
 
 model FooterLink {
   id           String                  @id @default(cuid())
-  groupId      String
+  groupId      String                  @map("group_id")
   order        Int
   url          String
   external     Boolean                 @default(false)
@@ -281,40 +421,49 @@ model FooterLink {
   group        FooterGroup             @relation(fields: [groupId], references: [id], onDelete: Cascade)
   translations FooterLinkTranslation[]
 
-  @@unique([groupId, order])
+  @@unique([groupId, order], map: "footer_links_group_id_order_key")
+  @@map("footer_links")
+  @@schema("solidra")
 }
 
 model FooterLinkTranslation {
   id     String     @id @default(cuid())
-  linkId String
+  linkId String     @map("link_id")
   locale Locale
   label  String
   link   FooterLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
-  @@unique([linkId, locale])
+  @@unique([linkId, locale], map: "footer_link_translations_link_id_locale_key")
+  @@map("footer_link_translations")
+  @@schema("solidra")
 }
 
 model Project {
   id           String               @id @default(cuid())
   slug         String               @unique
   location     String
-  completedAt  DateTime?
+  completedAt  DateTime?            @map("completed_at")
   featured     Boolean              @default(false)
   order        Int                  @default(0)
-  mediaId      String?
+  mediaId      String?              @map("media_id")
   media        MediaAsset?          @relation(fields: [mediaId], references: [id], onDelete: Restrict)
   translations ProjectTranslation[]
+
+  @@map("projects")
+  @@schema("solidra")
 }
 
 model ProjectTranslation {
   id          String  @id @default(cuid())
-  projectId   String
+  projectId   String  @map("project_id")
   locale      Locale
   title       String
   description String
   project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  @@unique([projectId, locale])
+  @@unique([projectId, locale], map: "project_translations_project_id_locale_key")
+  @@map("project_translations")
+  @@schema("solidra")
 }
 
 model Office {
@@ -329,63 +478,74 @@ model Office {
   hours        Json?
   order        Int                 @default(0)
   translations OfficeTranslation[]
+
+  @@map("offices")
+  @@schema("solidra")
 }
 
 model OfficeTranslation {
   id           String  @id @default(cuid())
-  officeId     String
+  officeId     String  @map("office_id")
   locale       Locale
   name         String
-  addressLabel String?
+  addressLabel String? @map("address_label")
   office       Office  @relation(fields: [officeId], references: [id], onDelete: Cascade)
 
-  @@unique([officeId, locale])
+  @@unique([officeId, locale], map: "office_translations_office_id_locale_key")
+  @@map("office_translations")
+  @@schema("solidra")
 }
 
 model InvestorDocument {
   id           String                        @id @default(cuid())
-  storagePath  String
+  storagePath  String                        @map("storage_path")
   year         Int
   category     String
-  mimeType     String                        @default("application/pdf")
+  mimeType     String                        @default("application/pdf") @map("mime_type")
   size         Int
-  publishedAt  DateTime?
+  publishedAt  DateTime?                     @map("published_at")
   status       ContentStatus                 @default(DRAFT)
   translations InvestorDocumentTranslation[]
 
-  @@index([status, year])
+  @@index([status, year], map: "investor_documents_status_year_idx")
+  @@map("investor_documents")
+  @@schema("solidra")
 }
 
 model InvestorDocumentTranslation {
   id          String           @id @default(cuid())
-  documentId  String
+  documentId  String           @map("document_id")
   locale      Locale
   title       String
   description String?
   document    InvestorDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
-  @@unique([documentId, locale])
+  @@unique([documentId, locale], map: "investor_document_translations_document_id_locale_key")
+  @@map("investor_document_translations")
+  @@schema("solidra")
 }
 
 model Vacancy {
   id             String               @id @default(cuid())
   department     String
   location       String
-  employmentType EmploymentType
-  closingDate    DateTime
+  employmentType EmploymentType         @map("employment_type")
+  closingDate    DateTime               @map("closing_date")
   status         VacancyStatus        @default(DRAFT)
-  publishedAt    DateTime?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  publishedAt    DateTime?              @map("published_at")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
   translations   VacancyTranslation[]
   applications   CareerApplication[]
 
-  @@index([status, closingDate])
+  @@index([status, closingDate], map: "vacancies_status_closing_date_idx")
+  @@map("vacancies")
+  @@schema("solidra")
 }
 
 model VacancyTranslation {
   id               String  @id @default(cuid())
-  vacancyId        String
+  vacancyId        String  @map("vacancy_id")
   locale           Locale
   slug             String
   title            String
@@ -394,8 +554,10 @@ model VacancyTranslation {
   requirements     Json
   vacancy          Vacancy @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
 
-  @@unique([vacancyId, locale])
-  @@unique([locale, slug])
+  @@unique([vacancyId, locale], map: "vacancy_translations_vacancy_id_locale_key")
+  @@unique([locale, slug], map: "vacancy_translations_locale_slug_key")
+  @@map("vacancy_translations")
+  @@schema("solidra")
 }
 
 model ContactMessage {
@@ -408,54 +570,63 @@ model ContactMessage {
   message        String
   locale         Locale
   status         ContactStatus    @default(NEW)
-  idempotencyKey String           @unique
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  idempotencyKey String           @unique @map("idempotency_key")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
   notes          SubmissionNote[]
 
-  @@index([status, createdAt])
+  @@index([status, createdAt], map: "contact_messages_status_created_at_idx")
+  @@map("contact_messages")
+  @@schema("solidra")
 }
 
 model CareerApplication {
   id             String            @id @default(cuid())
-  vacancyId      String
+  vacancyId      String            @map("vacancy_id")
   name           String
   email          String
   phone          String
-  coverLetter    String
-  cvStoragePath  String            @unique
+  coverLetter    String            @map("cover_letter")
+  cvStoragePath  String            @unique @map("cv_storage_path")
   status         ApplicationStatus @default(NEW)
-  idempotencyKey String            @unique
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  idempotencyKey String            @unique @map("idempotency_key")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
   vacancy        Vacancy           @relation(fields: [vacancyId], references: [id], onDelete: Restrict)
   notes          SubmissionNote[]
 
-  @@index([vacancyId, status])
+  @@index([vacancyId, status], map: "career_applications_vacancy_id_status_idx")
+  @@map("career_applications")
+  @@schema("solidra")
 }
 
 model SubmissionNote {
   id                  String             @id @default(cuid())
   body                String
-  authorId            String
-  contactMessageId    String?
-  careerApplicationId String?
-  createdAt           DateTime           @default(now())
+  authorId            String             @map("author_id")
+  contactMessageId    String?            @map("contact_message_id")
+  careerApplicationId String?            @map("career_application_id")
+  createdAt           DateTime           @default(now()) @map("created_at")
   author              User               @relation(fields: [authorId], references: [id])
   contactMessage      ContactMessage?    @relation(fields: [contactMessageId], references: [id], onDelete: Cascade)
   careerApplication   CareerApplication? @relation(fields: [careerApplicationId], references: [id], onDelete: Cascade)
+
+  @@map("submission_notes")
+  @@schema("solidra")
 }
 
 model AuditLog {
   id        String   @id @default(cuid())
-  actorId   String
+  actorId   String   @map("actor_id")
   action    String
   entity    String
-  entityId  String
+  entityId  String   @map("entity_id")
   metadata  Json?
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
   actor     User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
 
-  @@index([entity, entityId])
-  @@index([createdAt])
+  @@index([entity, entityId], map: "audit_logs_entity_entity_id_idx")
+  @@index([createdAt], map: "audit_logs_created_at_idx")
+  @@map("audit_logs")
+  @@schema("solidra")
 }

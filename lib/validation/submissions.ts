@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export const contactSchema = z.object({
+  locale: z.enum(["id", "en"]),
+  idempotencyKey: z.uuid(),
   name: z.string().trim().min(2).max(100),
   email: z.email(),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
@@ -14,6 +16,8 @@ export const contactSchema = z.object({
 const cvSchema = z.instanceof(File).refine((file) => file.size <= 5 * 1024 * 1024, "Maximum file size is 5 MB").refine((file) => ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.type), "CV must be PDF, DOC, or DOCX");
 
 export const applicationSchema = z.object({
+  locale: z.enum(["id", "en"]),
+  idempotencyKey: z.uuid(),
   name: z.string().trim().min(2).max(100),
   email: z.email(),
   phone: z.string().trim().min(8).max(30),

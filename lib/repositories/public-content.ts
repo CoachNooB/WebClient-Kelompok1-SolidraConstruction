@@ -3,6 +3,7 @@ import type { Locale } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { cached } from "@/lib/cache/server";
 import { cacheKeys } from "@/lib/cache/keys";
+import { getFallbackPage } from "@/lib/content/fallback-pages";
 import { defaultCompanySettings, type CompanySettings } from "@/lib/settings/defaults";
 
 export type SectionDto = { id: string; type: string; order: number; config: unknown; heading: string | null; body: string | null; ctaLabel: string | null; ctaUrl: string | null };
@@ -12,7 +13,7 @@ export async function getPublishedPage(key: string, locale: Locale): Promise<Pag
   return cached(cacheKeys.page(locale, key), 300, async () => {
     const page = await prisma.page.findFirst({ where: { key, status: "PUBLISHED", publishedRevisionId: { not: null } }, select: { key: true, slug: true, publishedRevision: { select: { translations: { where: { locale }, select: { title: true, description: true, seoTitle: true, seoDescription: true } }, sections: { where: { visible: true }, orderBy: { order: "asc" }, select: { id: true, type: true, order: true, config: true, translations: { where: { locale }, select: { heading: true, body: true, ctaLabel: true, ctaUrl: true } } } } } } } });
     const translation = page?.publishedRevision?.translations[0];
-    if (!page || !translation || !page.publishedRevision) return null;
+    if (!page || !translation || !page.publishedRevision) return getFallbackPage(key, locale);
     return { key: page.key, slug: page.slug, ...translation, sections: page.publishedRevision.sections.map((section) => ({ id: section.id, type: section.type, order: section.order, config: section.config, heading: section.translations[0]?.heading ?? null, body: section.translations[0]?.body ?? null, ctaLabel: section.translations[0]?.ctaLabel ?? null, ctaUrl: section.translations[0]?.ctaUrl ?? null })) };
   });
 }

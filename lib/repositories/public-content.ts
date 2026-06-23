@@ -3,6 +3,7 @@ import type { Locale } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { cached } from "@/lib/cache/server";
 import { cacheKeys } from "@/lib/cache/keys";
+import { defaultCompanySettings, type CompanySettings } from "@/lib/settings/defaults";
 
 export type SectionDto = { id: string; type: string; order: number; config: unknown; heading: string | null; body: string | null; ctaLabel: string | null; ctaUrl: string | null };
 export type PageDto = { key: string; slug: string; title: string; description: string; seoTitle: string | null; seoDescription: string | null; sections: SectionDto[] };
@@ -53,12 +54,12 @@ export async function getFooter(locale: Locale): Promise<FooterGroupDto[]> {
   });
 }
 
-export type CompanySettings = { name: string; email: string; phone: string; defaultLocale: "ID" | "EN"; descriptionId?: string; descriptionEn?: string;socialLinks?:{linkedin?:string;instagram?:string;youtube?:string};defaultSeo?:{title:string;description:string} };
+export type { CompanySettings };
 export async function getCompanySettings(): Promise<CompanySettings> {
   return cached(cacheKeys.settings(), 300, async () => {
     const setting = await prisma.siteSetting.findUnique({ where: { key: "company" }, select: { value: true } });
     const value = setting?.value;
-    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Company settings are missing");
-    return value as CompanySettings;
+    if (!value || typeof value !== "object" || Array.isArray(value)) return defaultCompanySettings;
+    return { ...defaultCompanySettings, ...(value as Partial<CompanySettings>) };
   });
 }

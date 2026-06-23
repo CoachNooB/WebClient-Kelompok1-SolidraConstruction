@@ -9,7 +9,10 @@ function client(): Redis {
   return new Redis({ url, token });
 }
 
-export async function enforceRateLimit(scope: "contact" | "application", identity: string): Promise<void> {
+export async function enforceRateLimit(
+  scope: "contact" | "application",
+  identity: string,
+): Promise<void> {
   const limit = scope === "contact" ? 5 : 3;
   const windowSeconds = scope === "contact" ? 15 * 60 : 60 * 60;
   const key = cacheKey("limit", scope, identity);
@@ -24,11 +27,27 @@ export async function enforceRateLimit(scope: "contact" | "application", identit
   }
 }
 
-export async function claimOnce(scope: string, key: string, ttlSeconds: number): Promise<boolean> {
-  try { return (await client().set(cacheKey("claim", scope, key), "1", { nx: true, ex: ttlSeconds })) === "OK"; }
-  catch { throw new Error("RATE_LIMIT_UNAVAILABLE"); }
+export async function claimOnce(
+  scope: string,
+  key: string,
+  ttlSeconds: number,
+): Promise<boolean> {
+  try {
+    return (
+      (await client().set(cacheKey("claim", scope, key), "1", {
+        nx: true,
+        ex: ttlSeconds,
+      })) === "OK"
+    );
+  } catch {
+    throw new Error("RATE_LIMIT_UNAVAILABLE");
+  }
 }
 
 export async function releaseClaim(scope: string, key: string): Promise<void> {
-  try { await client().del(cacheKey("claim", scope, key)); } catch { /* TTL provides safe cleanup. */ }
+  try {
+    await client().del(cacheKey("claim", scope, key));
+  } catch {
+    /* TTL provides safe cleanup. */
+  }
 }

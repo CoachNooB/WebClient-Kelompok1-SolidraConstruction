@@ -13,7 +13,18 @@ export const contactSchema = z.object({
   website: z.literal("").default(""),
 });
 
-const cvSchema = z.instanceof(File).refine((file) => file.size <= 5 * 1024 * 1024, "Maximum file size is 5 MB").refine((file) => ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.type), "CV must be PDF, DOC, or DOCX");
+const cvSchema = z
+  .instanceof(File)
+  .refine((file) => file.size <= 5 * 1024 * 1024, "Maximum file size is 5 MB")
+  .refine(
+    (file) =>
+      [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ].includes(file.type),
+    "CV must be PDF, DOC, or DOCX",
+  );
 
 export const applicationSchema = z.object({
   locale: z.enum(["id", "en"]),

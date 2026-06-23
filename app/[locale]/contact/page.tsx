@@ -1,2 +1,69 @@
-import {notFound} from "next/navigation";import {PageHero} from "@/components/public/page-hero";import {ContactForm} from "@/components/forms/contact-form";import {SectionRenderer} from "@/components/public/section-renderer";import {isLocale} from "@/lib/i18n";import {getOffices,getPublishedPage} from "@/lib/repositories/public-content";
-export default async function Contact({params}:{params:Promise<{locale:string}>}){const {locale}=await params;if(!isLocale(locale))notFound();const dbLocale=locale.toUpperCase() as "ID"|"EN";const [page,offices]=await Promise.all([getPublishedPage("contact",dbLocale),getOffices(dbLocale)]);if(!page)notFound();const hero=page.sections.find(s=>s.type==="HERO");return <><PageHero eyebrow={page.title} title={hero?.heading??page.title} description={hero?.body??page.description}/>{page.sections.filter(s=>!["HERO","CONTACT_FORM","OFFICES"].includes(s.type)).map(s=><SectionRenderer key={s.id} section={s} locale={locale}/>)}<section className="section"><div className="container grid gap-12 md:grid-cols-[.8fr_1.2fr]"><div>{offices.map(office=><article className="mb-8" key={office.id}><h2 className="text-2xl font-bold">{office.translations[0]?.name??office.city}</h2><p className="mt-4 leading-8 text-slate-600">{office.address}<br/>{office.city}</p><p className="mt-4">{office.email}<br/>{office.phone}</p></article>)}</div><div><ContactForm locale={locale}/><p className="mt-4 text-xs text-slate-500">{locale==="id"?"Data digunakan hanya untuk menanggapi pertanyaan Anda.":"Your data is used only to respond to your inquiry."}</p></div></div></section></>}
+import { notFound } from "next/navigation";
+import { PageHero } from "@/components/public/page-hero";
+import { ContactForm } from "@/components/forms/contact-form";
+import { SectionRenderer } from "@/components/public/section-renderer";
+import { isLocale } from "@/lib/i18n";
+import {
+  getOffices,
+  getPublishedPage,
+} from "@/lib/repositories/public-content";
+export default async function Contact({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  const dbLocale = locale.toUpperCase() as "ID" | "EN";
+  const [page, offices] = await Promise.all([
+    getPublishedPage("contact", dbLocale),
+    getOffices(dbLocale),
+  ]);
+  if (!page) notFound();
+  const hero = page.sections.find((s) => s.type === "HERO");
+  return (
+    <>
+      <PageHero
+        eyebrow={page.title}
+        title={hero?.heading ?? page.title}
+        description={hero?.body ?? page.description}
+      />
+      {page.sections
+        .filter((s) => !["HERO", "CONTACT_FORM", "OFFICES"].includes(s.type))
+        .map((s) => (
+          <SectionRenderer key={s.id} section={s} locale={locale} />
+        ))}
+      <section className="section">
+        <div className="container grid gap-12 md:grid-cols-[.8fr_1.2fr]">
+          <div>
+            {offices.map((office) => (
+              <article className="mb-8" key={office.id}>
+                <h2 className="text-2xl font-bold">
+                  {office.translations[0]?.name ?? office.city}
+                </h2>
+                <p className="mt-4 leading-8 text-slate-600">
+                  {office.address}
+                  <br />
+                  {office.city}
+                </p>
+                <p className="mt-4">
+                  {office.email}
+                  <br />
+                  {office.phone}
+                </p>
+              </article>
+            ))}
+          </div>
+          <div>
+            <ContactForm locale={locale} />
+            <p className="mt-4 text-xs text-slate-500">
+              {locale === "id"
+                ? "Data digunakan hanya untuk menanggapi pertanyaan Anda."
+                : "Your data is used only to respond to your inquiry."}
+            </p>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

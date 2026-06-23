@@ -4,11 +4,16 @@ import { Redis } from "@upstash/redis";
 const memoryCache = new Map<string, { expiresAt: number; value: unknown }>();
 
 function redis(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL, token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = process.env.UPSTASH_REDIS_REST_URL,
+    token = process.env.UPSTASH_REDIS_REST_TOKEN;
   return url && token ? new Redis({ url, token }) : null;
 }
 
-export async function cached<T>(key: string, seconds: number, load: () => Promise<T>): Promise<T> {
+export async function cached<T>(
+  key: string,
+  seconds: number,
+  load: () => Promise<T>,
+): Promise<T> {
   const now = Date.now();
   const memoryHit = memoryCache.get(key);
   if (memoryHit && memoryHit.expiresAt > now) return memoryHit.value as T;
@@ -21,11 +26,18 @@ export async function cached<T>(key: string, seconds: number, load: () => Promis
         memoryCache.set(key, { value: hit, expiresAt: now + seconds * 1000 });
         return hit;
       }
-    } catch { /* PostgreSQL fallback. */ }
+    } catch {
+      /* PostgreSQL fallback. */
+    }
   }
   const value = await load();
   memoryCache.set(key, { value, expiresAt: now + seconds * 1000 });
-  if (connection) try { await connection.set(key, value, { ex: seconds }); } catch { /* Cache is optional for reads. */ }
+  if (connection)
+    try {
+      await connection.set(key, value, { ex: seconds });
+    } catch {
+      /* Cache is optional for reads. */
+    }
   return value;
 }
 

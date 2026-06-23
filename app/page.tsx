@@ -1,1 +1,4 @@
-import { redirect } from "next/navigation"; export default function Root(){redirect("/id")}
+import { redirect } from "next/navigation";
+export default function Root() {
+  redirect("/id");
+}

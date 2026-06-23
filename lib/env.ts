@@ -18,7 +18,10 @@ export function parseEnvironment(environment: Environment) {
     return { integrationsEnabled: false as const };
   }
 
-  return { ...productionEnvironment.parse(environment), integrationsEnabled: true as const };
+  return {
+    ...productionEnvironment.parse(environment),
+    integrationsEnabled: true as const,
+  };
 }
 
 export const env = parseEnvironment(process.env);

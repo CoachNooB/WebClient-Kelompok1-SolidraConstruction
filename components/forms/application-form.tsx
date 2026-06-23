@@ -1,2 +1,71 @@
-"use client"; import {useState} from "react";
-export function ApplicationForm({vacancyId,locale}:{vacancyId:string;locale:string}){const [message,setMessage]=useState("");const [key]=useState(()=>crypto.randomUUID());async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();const res=await fetch(`/api/careers/${vacancyId}/apply`,{method:"POST",body:new FormData(e.currentTarget)});setMessage(res.ok?"Application received. Thank you for applying.":"Application could not be submitted.")}return <form onSubmit={submit} className="card grid gap-4"><input type="hidden" name="locale" value={locale}/><input type="hidden" name="idempotencyKey" value={key}/>{[["name","Full name","text"],["email","Email","email"],["phone","Phone","tel"]].map(x=><label className="grid gap-2 font-semibold" key={x[0]}>{x[1]}<input required name={x[0]} type={x[2]} className="min-h-11 rounded border px-3 font-normal"/></label>)}<label className="grid gap-2 font-semibold">Cover letter<textarea required minLength={20} name="coverLetter" rows={5} className="rounded border p-3 font-normal"/></label><label className="grid gap-2 font-semibold">CV (PDF, DOC, DOCX · max 5 MB)<input required name="cv" type="file" accept=".pdf,.doc,.docx" className="min-h-11 rounded border p-2 font-normal"/></label><label className="flex gap-3 text-sm"><input required name="consent" value="true" type="checkbox"/>I consent to the processing of my application data.</label>{message&&<p role="status">{message}</p>}<button className="btn btn-primary">Submit application</button></form>}
+"use client";
+import { useState } from "react";
+export function ApplicationForm({
+  vacancyId,
+  locale,
+}: {
+  vacancyId: string;
+  locale: string;
+}) {
+  const [message, setMessage] = useState("");
+  const [key] = useState(() => crypto.randomUUID());
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const res = await fetch(`/api/careers/${vacancyId}/apply`, {
+      method: "POST",
+      body: new FormData(e.currentTarget),
+    });
+    setMessage(
+      res.ok
+        ? "Application received. Thank you for applying."
+        : "Application could not be submitted.",
+    );
+  }
+  return (
+    <form onSubmit={submit} className="card grid gap-4">
+      <input type="hidden" name="locale" value={locale} />
+      <input type="hidden" name="idempotencyKey" value={key} />
+      {[
+        ["name", "Full name", "text"],
+        ["email", "Email", "email"],
+        ["phone", "Phone", "tel"],
+      ].map((x) => (
+        <label className="grid gap-2 font-semibold" key={x[0]}>
+          {x[1]}
+          <input
+            required
+            name={x[0]}
+            type={x[2]}
+            className="min-h-11 rounded border px-3 font-normal"
+          />
+        </label>
+      ))}
+      <label className="grid gap-2 font-semibold">
+        Cover letter
+        <textarea
+          required
+          minLength={20}
+          name="coverLetter"
+          rows={5}
+          className="rounded border p-3 font-normal"
+        />
+      </label>
+      <label className="grid gap-2 font-semibold">
+        CV (PDF, DOC, DOCX · max 5 MB)
+        <input
+          required
+          name="cv"
+          type="file"
+          accept=".pdf,.doc,.docx"
+          className="min-h-11 rounded border p-2 font-normal"
+        />
+      </label>
+      <label className="flex gap-3 text-sm">
+        <input required name="consent" value="true" type="checkbox" />I consent
+        to the processing of my application data.
+      </label>
+      {message && <p role="status">{message}</p>}
+      <button className="btn btn-primary">Submit application</button>
+    </form>
+  );
+}

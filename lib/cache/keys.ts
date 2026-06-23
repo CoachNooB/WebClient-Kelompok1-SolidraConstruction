@@ -1,7 +1,12 @@
 const PREFIX = process.env.REDIS_KEY_PREFIX ?? "solidra:v1";
 
-export function cacheKey(namespace: string, ...parts: Array<string | number>): string {
-  return [PREFIX, namespace, ...parts].map((part) => String(part).trim().toLowerCase()).join(":");
+export function cacheKey(
+  namespace: string,
+  ...parts: Array<string | number>
+): string {
+  return [PREFIX, namespace, ...parts]
+    .map((part) => String(part).trim().toLowerCase())
+    .join(":");
 }
 
 export const cacheKeys = {

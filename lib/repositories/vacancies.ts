@@ -4,6 +4,13 @@ export type VacancyEligibility = {
   closingDate: Date;
 };
 
-export function isVacancyEligible(vacancy: VacancyEligibility, now = new Date()): boolean {
-  return vacancy.status === "OPEN" && vacancy.publishedAt !== null && vacancy.closingDate.getTime() >= now.getTime();
+export function isVacancyEligible(
+  vacancy: VacancyEligibility,
+  now = new Date(),
+): boolean {
+  return (
+    vacancy.status === "OPEN" &&
+    vacancy.publishedAt !== null &&
+    vacancy.closingDate.getTime() >= now.getTime()
+  );
 }

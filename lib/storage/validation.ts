@@ -4,7 +4,14 @@ type UploadKind = "image" | "document" | "cv";
 const rules = {
   image: { max: 8 * MB, types: ["image/jpeg", "image/png", "image/webp"] },
   document: { max: 15 * MB, types: ["application/pdf"] },
-  cv: { max: 5 * MB, types: ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"] },
+  cv: {
+    max: 5 * MB,
+    types: [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+  },
 } satisfies Record<UploadKind, { max: number; types: string[] }>;
 
 const signatures = new Map<string, number[][]>([
@@ -13,17 +20,40 @@ const signatures = new Map<string, number[][]>([
   ["image/png", [[0x89, 0x50, 0x4e, 0x47]]],
   ["image/webp", [[0x52, 0x49, 0x46, 0x46]]],
   ["application/msword", [[0xd0, 0xcf, 0x11, 0xe0]]],
-  ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", [[0x50, 0x4b, 0x03, 0x04]]],
+  [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    [[0x50, 0x4b, 0x03, 0x04]],
+  ],
 ]);
 
-const extensions: Record<string, string> = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "application/msword": "doc", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx" };
+const extensions: Record<string, string> = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+    "docx",
+};
 
-export async function validateUpload(file: File, kind: UploadKind): Promise<{ extension: string; mimeType: string; size: number }> {
+export async function validateUpload(
+  file: File,
+  kind: UploadKind,
+): Promise<{ extension: string; mimeType: string; size: number }> {
   const rule = rules[kind];
-  if (file.size === 0 || file.size > rule.max) throw new Error("Invalid file size");
+  if (file.size === 0 || file.size > rule.max)
+    throw new Error("Invalid file size");
   if (!rule.types.includes(file.type)) throw new Error("Unsupported MIME type");
   const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-  const valid = signatures.get(file.type)?.some((signature) => signature.every((byte, index) => bytes[index] === byte));
+  const valid = signatures
+    .get(file.type)
+    ?.some((signature) =>
+      signature.every((byte, index) => bytes[index] === byte),
+    );
   if (!valid) throw new Error("Invalid file signature");
-  return { extension: extensions[file.type], mimeType: file.type, size: file.size };
+  return {
+    extension: extensions[file.type],
+    mimeType: file.type,
+    size: file.size,
+  };
 }

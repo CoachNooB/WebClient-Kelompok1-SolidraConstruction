@@ -1,3 +1,56 @@
-import {headers} from "next/headers";import {NextResponse} from "next/server";import {z} from "zod";import {auth} from "@/lib/auth";import {prisma} from "@/lib/db";import {validateStaffUpdate} from "@/lib/auth/user-policy";
-const inputSchema=z.object({role:z.enum(["SUPER_ADMIN","EDITOR","REVIEWER"]),active:z.boolean()});
-export async function PATCH(request:Request,{params}:{params:Promise<{id:string}>}){const session=await auth.api.getSession({headers:await headers()});if(!session||session.user.role!=="SUPER_ADMIN")return NextResponse.json({error:"Forbidden"},{status:403});const parsed=inputSchema.safeParse(await request.json());if(!parsed.success)return NextResponse.json({error:"Invalid user update"},{status:422});const {id}=await params;const [target,activeSuperAdmins]=await Promise.all([prisma.user.findUnique({where:{id},select:{role:true}}),prisma.user.count({where:{role:"SUPER_ADMIN",active:true}})]);if(!target)return NextResponse.json({error:"Not found"},{status:404});try{validateStaffUpdate({actorId:session.user.id,targetId:id,currentRole:target.role,nextRole:parsed.data.role,nextActive:parsed.data.active,activeSuperAdmins})}catch(error){return NextResponse.json({error:error instanceof Error?error.message:"Invalid update"},{status:409})}await prisma.$transaction([prisma.user.update({where:{id},data:parsed.data}),prisma.auditLog.create({data:{actorId:session.user.id,action:"USER_UPDATED",entity:"User",entityId:id,metadata:parsed.data}})]);return NextResponse.json({ok:true})}
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { validateStaffUpdate } from "@/lib/auth/user-policy";
+const inputSchema = z.object({
+  role: z.enum(["SUPER_ADMIN", "EDITOR", "REVIEWER"]),
+  active: z.boolean(),
+});
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || session.user.role !== "SUPER_ADMIN")
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const parsed = inputSchema.safeParse(await request.json());
+  if (!parsed.success)
+    return NextResponse.json({ error: "Invalid user update" }, { status: 422 });
+  const { id } = await params;
+  const [target, activeSuperAdmins] = await Promise.all([
+    prisma.user.findUnique({ where: { id }, select: { role: true } }),
+    prisma.user.count({ where: { role: "SUPER_ADMIN", active: true } }),
+  ]);
+  if (!target)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    validateStaffUpdate({
+      actorId: session.user.id,
+      targetId: id,
+      currentRole: target.role,
+      nextRole: parsed.data.role,
+      nextActive: parsed.data.active,
+      activeSuperAdmins,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Invalid update" },
+      { status: 409 },
+    );
+  }
+  await prisma.$transaction([
+    prisma.user.update({ where: { id }, data: parsed.data }),
+    prisma.auditLog.create({
+      data: {
+        actorId: session.user.id,
+        action: "USER_UPDATED",
+        entity: "User",
+        entityId: id,
+        metadata: parsed.data,
+      },
+    }),
+  ]);
+  return NextResponse.json({ ok: true });
+}

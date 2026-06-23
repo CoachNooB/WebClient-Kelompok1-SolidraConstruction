@@ -1,3 +1,21 @@
-import {readFileSync} from "node:fs";import {describe,expect,it} from "vitest";
-const schema=readFileSync("prisma/schema.prisma","utf8");const migration=readFileSync("prisma/migrations/20260622153000_init_solidra/migration.sql","utf8");
-describe("database naming contract",()=>{it("configures only the solidra Prisma schema",()=>expect(schema).toContain('schemas  = ["solidra"]'));it("creates the schema before tables",()=>expect(migration.indexOf('CREATE SCHEMA IF NOT EXISTS "solidra"')).toBeLessThan(migration.indexOf("CREATE TABLE")));it("creates no application table in public",()=>expect(migration).not.toMatch(/CREATE TABLE\s+"public"/));it("uses snake_case physical table and column names",()=>{expect(migration).toContain('"solidra"."career_applications"');expect(migration).toContain('"cv_storage_path"')})});
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+const schema = readFileSync("prisma/schema.prisma", "utf8");
+const migration = readFileSync(
+  "prisma/migrations/20260622153000_init_solidra/migration.sql",
+  "utf8",
+);
+describe("database naming contract", () => {
+  it("configures only the solidra Prisma schema", () =>
+    expect(schema).toContain('schemas  = ["solidra"]'));
+  it("creates the schema before tables", () =>
+    expect(
+      migration.indexOf('CREATE SCHEMA IF NOT EXISTS "solidra"'),
+    ).toBeLessThan(migration.indexOf("CREATE TABLE")));
+  it("creates no application table in public", () =>
+    expect(migration).not.toMatch(/CREATE TABLE\s+"public"/));
+  it("uses snake_case physical table and column names", () => {
+    expect(migration).toContain('"solidra"."career_applications"');
+    expect(migration).toContain('"cv_storage_path"');
+  });
+});

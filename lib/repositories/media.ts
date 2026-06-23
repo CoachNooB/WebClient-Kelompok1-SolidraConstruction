@@ -1,2 +1,43 @@
-import "server-only";import {prisma} from "@/lib/db";import {removePublicAsset} from "@/lib/storage/supabase";
-export async function deleteUnusedMedia(id:string,actorId:string):Promise<void>{const media=await prisma.mediaAsset.findUnique({where:{id},select:{storagePath:true,sections:{select:{id:true}},revisionSections:{select:{id:true}},projects:{select:{id:true}}}});if(!media)throw new Error("Media not found");if(media.sections.length+media.revisionSections.length+media.projects.length>0)throw new Error("Media is referenced");await removePublicAsset(media.storagePath,"image");try{await prisma.$transaction([prisma.mediaAsset.delete({where:{id}}),prisma.auditLog.create({data:{actorId,action:"MEDIA_DELETED",entity:"MediaAsset",entityId:id}})])}catch(error){throw new Error(`Storage removed but database cleanup failed: ${error instanceof Error?error.message:"unknown error"}`)}}
+import "server-only";
+import { prisma } from "@/lib/db";
+import { removePublicAsset } from "@/lib/storage/supabase";
+export async function deleteUnusedMedia(
+  id: string,
+  actorId: string,
+): Promise<void> {
+  const media = await prisma.mediaAsset.findUnique({
+    where: { id },
+    select: {
+      storagePath: true,
+      sections: { select: { id: true } },
+      revisionSections: { select: { id: true } },
+      projects: { select: { id: true } },
+    },
+  });
+  if (!media) throw new Error("Media not found");
+  if (
+    media.sections.length +
+      media.revisionSections.length +
+      media.projects.length >
+    0
+  )
+    throw new Error("Media is referenced");
+  await removePublicAsset(media.storagePath, "image");
+  try {
+    await prisma.$transaction([
+      prisma.mediaAsset.delete({ where: { id } }),
+      prisma.auditLog.create({
+        data: {
+          actorId,
+          action: "MEDIA_DELETED",
+          entity: "MediaAsset",
+          entityId: id,
+        },
+      }),
+    ]);
+  } catch (error) {
+    throw new Error(
+      `Storage removed but database cleanup failed: ${error instanceof Error ? error.message : "unknown error"}`,
+    );
+  }
+}

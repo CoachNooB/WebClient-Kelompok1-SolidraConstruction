@@ -1,3 +1,60 @@
-import {headers} from "next/headers";import {NextResponse} from "next/server";import {z} from "zod";import {auth} from "@/lib/auth";import {can,type StaffRole} from "@/lib/auth/permissions";import {prisma} from "@/lib/db";import {invalidate} from "@/lib/cache/server";import {cacheKeys} from "@/lib/cache/keys";import {updateVacancy} from "@/lib/repositories/vacancy-editor";import {vacancyEditorSchema} from "@/lib/validation/vacancy-editor";
-const schema=z.object({status:z.enum(["DRAFT","OPEN","CLOSED","ARCHIVED"])});
-export async function PATCH(request:Request,{params}:{params:Promise<{id:string}>}){const session=await auth.api.getSession({headers:await headers()});if(!session)return NextResponse.json({error:"Forbidden"},{status:403});const body=await request.json();const {id}=await params;if(Object.keys(body).length===1&&"status" in body){if(!can(session.user.role as StaffRole,"content:publish"))return NextResponse.json({error:"Forbidden"},{status:403});const parsed=schema.safeParse(body);if(!parsed.success)return NextResponse.json({error:"Invalid status"},{status:422});await prisma.$transaction([prisma.vacancy.update({where:{id},data:{status:parsed.data.status,publishedAt:parsed.data.status==="OPEN"?new Date():null}}),prisma.auditLog.create({data:{actorId:session.user.id,action:"VACANCY_STATUS_CHANGED",entity:"Vacancy",entityId:id,metadata:parsed.data}})]);await invalidate([cacheKeys.vacancies("ID"),cacheKeys.vacancies("EN")]);return NextResponse.json({ok:true})}if(!can(session.user.role as StaffRole,"content:write"))return NextResponse.json({error:"Forbidden"},{status:403});const parsed=vacancyEditorSchema.safeParse(body);if(!parsed.success)return NextResponse.json({error:"Invalid vacancy",fields:parsed.error.flatten().fieldErrors},{status:422});await updateVacancy(id,session.user.id,parsed.data);return NextResponse.json({ok:true})}
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { can, type StaffRole } from "@/lib/auth/permissions";
+import { prisma } from "@/lib/db";
+import { invalidate } from "@/lib/cache/server";
+import { cacheKeys } from "@/lib/cache/keys";
+import { updateVacancy } from "@/lib/repositories/vacancy-editor";
+import { vacancyEditorSchema } from "@/lib/validation/vacancy-editor";
+const schema = z.object({
+  status: z.enum(["DRAFT", "OPEN", "CLOSED", "ARCHIVED"]),
+});
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const body = await request.json();
+  const { id } = await params;
+  if (Object.keys(body).length === 1 && "status" in body) {
+    if (!can(session.user.role as StaffRole, "content:publish"))
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const parsed = schema.safeParse(body);
+    if (!parsed.success)
+      return NextResponse.json({ error: "Invalid status" }, { status: 422 });
+    await prisma.$transaction([
+      prisma.vacancy.update({
+        where: { id },
+        data: {
+          status: parsed.data.status,
+          publishedAt: parsed.data.status === "OPEN" ? new Date() : null,
+        },
+      }),
+      prisma.auditLog.create({
+        data: {
+          actorId: session.user.id,
+          action: "VACANCY_STATUS_CHANGED",
+          entity: "Vacancy",
+          entityId: id,
+          metadata: parsed.data,
+        },
+      }),
+    ]);
+    await invalidate([cacheKeys.vacancies("ID"), cacheKeys.vacancies("EN")]);
+    return NextResponse.json({ ok: true });
+  }
+  if (!can(session.user.role as StaffRole, "content:write"))
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const parsed = vacancyEditorSchema.safeParse(body);
+  if (!parsed.success)
+    return NextResponse.json(
+      { error: "Invalid vacancy", fields: parsed.error.flatten().fieldErrors },
+      { status: 422 },
+    );
+  await updateVacancy(id, session.user.id, parsed.data);
+  return NextResponse.json({ ok: true });
+}

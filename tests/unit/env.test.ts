@@ -3,11 +3,15 @@ import { parseEnvironment } from "@/lib/env";
 
 describe("parseEnvironment", () => {
   it("allows an integration-free local environment", () => {
-    expect(parseEnvironment({ NODE_ENV: "development" }).integrationsEnabled).toBe(false);
+    expect(
+      parseEnvironment({ NODE_ENV: "development" }).integrationsEnabled,
+    ).toBe(false);
   });
 
   it("requires every production integration credential", () => {
-    expect(() => parseEnvironment({ NODE_ENV: "production" })).toThrow(/DATABASE_URL/);
+    expect(() => parseEnvironment({ NODE_ENV: "production" })).toThrow(
+      /DATABASE_URL/,
+    );
   });
 
   it("accepts complete production credentials", () => {

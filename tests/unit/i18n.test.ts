@@ -9,6 +9,8 @@ describe("i18n", () => {
   });
 
   it("retains the page when switching locale", () => {
-    expect(localizePath("/id/careers/site-engineer", "en")).toBe("/en/careers/site-engineer");
+    expect(localizePath("/id/careers/site-engineer", "en")).toBe(
+      "/en/careers/site-engineer",
+    );
   });
 });

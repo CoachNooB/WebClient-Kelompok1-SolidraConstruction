@@ -4,6 +4,8 @@ export async function time<T>(label: string, fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } finally {
-    console.log(`[timing] ${label}: ${Math.round(performance.now() - started)}ms`);
+    console.log(
+      `[timing] ${label}: ${Math.round(performance.now() - started)}ms`,
+    );
   }
 }

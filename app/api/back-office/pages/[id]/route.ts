@@ -1,2 +1,32 @@
-import {headers} from "next/headers";import {NextResponse} from "next/server";import {auth} from "@/lib/auth";import {can,type StaffRole} from "@/lib/auth/permissions";import {pageDraftSchema} from "@/lib/validation/page-editor";import {savePageDraft} from "@/lib/repositories/page-editor";
-export async function PATCH(request:Request,{params}:{params:Promise<{id:string}>}){const session=await auth.api.getSession({headers:await headers()});if(!session||!can(session.user.role as StaffRole,"content:write"))return NextResponse.json({error:"Forbidden"},{status:403});const parsed=pageDraftSchema.safeParse(await request.json());if(!parsed.success)return NextResponse.json({error:"Invalid page draft",fields:parsed.error.flatten()},{status:422});try{return NextResponse.json(await savePageDraft((await params).id,session.user.id,parsed.data))}catch(error){return NextResponse.json({error:error instanceof Error?error.message:"Unable to save draft"},{status:409})}}
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { can, type StaffRole } from "@/lib/auth/permissions";
+import { pageDraftSchema } from "@/lib/validation/page-editor";
+import { savePageDraft } from "@/lib/repositories/page-editor";
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !can(session.user.role as StaffRole, "content:write"))
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const parsed = pageDraftSchema.safeParse(await request.json());
+  if (!parsed.success)
+    return NextResponse.json(
+      { error: "Invalid page draft", fields: parsed.error.flatten() },
+      { status: 422 },
+    );
+  try {
+    return NextResponse.json(
+      await savePageDraft((await params).id, session.user.id, parsed.data),
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Unable to save draft",
+      },
+      { status: 409 },
+    );
+  }
+}

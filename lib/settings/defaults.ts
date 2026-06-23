@@ -19,6 +19,7 @@ export const defaultCompanySettings: CompanySettings = {
   socialLinks: {},
   defaultSeo: {
     title: "Solidra Construction",
-    description: "Integrated construction and infrastructure partner in Indonesia.",
+    description:
+      "Integrated construction and infrastructure partner in Indonesia.",
   },
 };

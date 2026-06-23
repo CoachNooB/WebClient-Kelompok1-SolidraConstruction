@@ -1,2 +1,58 @@
-import Link from "next/link"; import type { Locale } from "@/lib/i18n"; import type { CompanySettings, FooterGroupDto } from "@/lib/repositories/public-content";
-export function SiteFooter({locale,groups,company}:{locale:Locale;groups:FooterGroupDto[];company:CompanySettings}){return <footer className="bg-slate-950 py-14 text-slate-300"><div className="container grid gap-10 md:grid-cols-4"><div className="md:col-span-2"><div className="text-xl font-black text-white"><span className="text-blue-500">SOLIDRA</span> CONSTRUCTION</div><p className="mt-4 max-w-md text-sm leading-6">{locale==="id"?(company.descriptionId??"Membangun fondasi kuat bagi masa depan Indonesia."):(company.descriptionEn??"Building strong foundations for Indonesia's future.")}</p><p className="mt-4 text-sm">{company.email}<br/>{company.phone}</p></div>{groups.map(group=><div key={group.id}><h2 className="font-bold text-white">{group.title}</h2><div className="mt-3 grid gap-2 text-sm">{group.links.map(link=><Link key={link.id} href={link.external?link.url:`/${locale}${link.url}`} target={link.external?"_blank":undefined}>{link.label}</Link>)}</div></div>)}</div><div className="container mt-10 border-t border-slate-800 pt-6 text-xs">© {new Date().getFullYear()} {company.name}. All rights reserved.</div></footer>}
+import Link from "next/link";
+import type { Locale } from "@/lib/i18n";
+import type {
+  CompanySettings,
+  FooterGroupDto,
+} from "@/lib/repositories/public-content";
+export function SiteFooter({
+  locale,
+  groups,
+  company,
+}: {
+  locale: Locale;
+  groups: FooterGroupDto[];
+  company: CompanySettings;
+}) {
+  return (
+    <footer className="bg-slate-950 py-14 text-slate-300">
+      <div className="container grid gap-10 md:grid-cols-4">
+        <div className="md:col-span-2">
+          <div className="text-xl font-black text-white">
+            <span className="text-blue-500">SOLIDRA</span> CONSTRUCTION
+          </div>
+          <p className="mt-4 max-w-md text-sm leading-6">
+            {locale === "id"
+              ? (company.descriptionId ??
+                "Membangun fondasi kuat bagi masa depan Indonesia.")
+              : (company.descriptionEn ??
+                "Building strong foundations for Indonesia's future.")}
+          </p>
+          <p className="mt-4 text-sm">
+            {company.email}
+            <br />
+            {company.phone}
+          </p>
+        </div>
+        {groups.map((group) => (
+          <div key={group.id}>
+            <h2 className="font-bold text-white">{group.title}</h2>
+            <div className="mt-3 grid gap-2 text-sm">
+              {group.links.map((link) => (
+                <Link
+                  key={link.id}
+                  href={link.external ? link.url : `/${locale}${link.url}`}
+                  target={link.external ? "_blank" : undefined}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="container mt-10 border-t border-slate-800 pt-6 text-xs">
+        © {new Date().getFullYear()} {company.name}. All rights reserved.
+      </div>
+    </footer>
+  );
+}

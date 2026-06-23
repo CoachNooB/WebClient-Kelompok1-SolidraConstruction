@@ -1,2 +1,75 @@
-import Link from "next/link";import {notFound} from "next/navigation";import {ArrowRight} from "lucide-react";import {PageHero} from "@/components/public/page-hero";import {SectionRenderer} from "@/components/public/section-renderer";import {isLocale} from "@/lib/i18n";import {getPublishedPage,getVacancies} from "@/lib/repositories/public-content";
-export default async function Careers({params}:{params:Promise<{locale:string}>}){const {locale}=await params;if(!isLocale(locale))notFound();const dbLocale=locale.toUpperCase() as "ID"|"EN";const [page,vacancies]=await Promise.all([getPublishedPage("careers",dbLocale),getVacancies(dbLocale)]);if(!page)notFound();const hero=page.sections.find(s=>s.type==="HERO");return <><PageHero eyebrow={page.title} title={hero?.heading??page.title} description={hero?.body??page.description}/>{page.sections.filter(s=>!["HERO","VACANCIES"].includes(s.type)).map(s=><SectionRenderer key={s.id} section={s} locale={locale}/>)}<section className="section"><div className="container"><h2 className="text-3xl font-black">{locale==="id"?"Posisi tersedia":"Open positions"}</h2><div className="mt-8 grid gap-4">{vacancies.map(v=>{const t=v.translations[0];if(!t)return null;return <Link className="card flex items-center justify-between hover:border-blue-400" href={`/${locale}/careers/${t.slug}`} key={v.id}><div><h3 className="text-xl font-bold">{t.title}</h3><p className="mt-2 text-sm text-slate-600">{v.department} · {v.location} · {v.employmentType.replaceAll("_"," ")}</p></div><ArrowRight/></Link>})}{vacancies.length===0&&<p className="text-slate-600">{locale==="id"?"Belum ada posisi tersedia.":"No positions are currently open."}</p>}</div></div></section></>}
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowRight } from "lucide-react";
+import { PageHero } from "@/components/public/page-hero";
+import { SectionRenderer } from "@/components/public/section-renderer";
+import { isLocale } from "@/lib/i18n";
+import {
+  getPublishedPage,
+  getVacancies,
+} from "@/lib/repositories/public-content";
+export default async function Careers({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  const dbLocale = locale.toUpperCase() as "ID" | "EN";
+  const [page, vacancies] = await Promise.all([
+    getPublishedPage("careers", dbLocale),
+    getVacancies(dbLocale),
+  ]);
+  if (!page) notFound();
+  const hero = page.sections.find((s) => s.type === "HERO");
+  return (
+    <>
+      <PageHero
+        eyebrow={page.title}
+        title={hero?.heading ?? page.title}
+        description={hero?.body ?? page.description}
+      />
+      {page.sections
+        .filter((s) => !["HERO", "VACANCIES"].includes(s.type))
+        .map((s) => (
+          <SectionRenderer key={s.id} section={s} locale={locale} />
+        ))}
+      <section className="section">
+        <div className="container">
+          <h2 className="text-3xl font-black">
+            {locale === "id" ? "Posisi tersedia" : "Open positions"}
+          </h2>
+          <div className="mt-8 grid gap-4">
+            {vacancies.map((v) => {
+              const t = v.translations[0];
+              if (!t) return null;
+              return (
+                <Link
+                  className="card flex items-center justify-between hover:border-blue-400"
+                  href={`/${locale}/careers/${t.slug}`}
+                  key={v.id}
+                >
+                  <div>
+                    <h3 className="text-xl font-bold">{t.title}</h3>
+                    <p className="mt-2 text-sm text-slate-600">
+                      {v.department} · {v.location} ·{" "}
+                      {v.employmentType.replaceAll("_", " ")}
+                    </p>
+                  </div>
+                  <ArrowRight />
+                </Link>
+              );
+            })}
+            {vacancies.length === 0 && (
+              <p className="text-slate-600">
+                {locale === "id"
+                  ? "Belum ada posisi tersedia."
+                  : "No positions are currently open."}
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

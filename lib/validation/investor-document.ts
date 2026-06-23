@@ -9,6 +9,11 @@ export const investorDocumentMetadataSchema = z.object({
   descriptionEn: z.string().trim().max(1000).optional(),
 });
 
-export const investorDocumentReplaceSchema = z.object({
-  file: z.instanceof(File),
-}).refine((data) => data.file.type === "application/pdf", { path: ["file"], message: "PDF file required" });
+export const investorDocumentReplaceSchema = z
+  .object({
+    file: z.instanceof(File),
+  })
+  .refine((data) => data.file.type === "application/pdf", {
+    path: ["file"],
+    message: "PDF file required",
+  });

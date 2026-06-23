@@ -3,7 +3,10 @@ import { expect, test } from "@playwright/test";
 test("back-office login and core CMS browsing", async ({ page }) => {
   const email = process.env.E2E_ADMIN_EMAIL;
   const password = process.env.E2E_ADMIN_PASSWORD;
-  test.skip(!email || !password, "E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD are required");
+  test.skip(
+    !email || !password,
+    "E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD are required",
+  );
 
   await page.goto("/back-office/login");
   await page.getByLabel(/email/i).fill(email!);
@@ -11,7 +14,15 @@ test("back-office login and core CMS browsing", async ({ page }) => {
   await page.getByRole("button", { name: /login|sign in/i }).click();
   await expect(page).toHaveURL(/back-office/);
 
-  for (const section of ["pages", "vacancies", "investor-documents", "messages", "applications", "media", "settings"]) {
+  for (const section of [
+    "pages",
+    "vacancies",
+    "investor-documents",
+    "messages",
+    "applications",
+    "media",
+    "settings",
+  ]) {
     await page.goto(`/back-office/${section}`);
     await expect(page.locator("h1")).toBeVisible();
   }

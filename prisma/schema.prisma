@@ -116,24 +116,24 @@ enum NavigationLocation {
 }
 
 model User {
-  id             String           @id @default(cuid()) @map("id")
-  name           String
-  email          String           @unique
-  emailVerified  Boolean          @default(false) @map("email_verified")
-  image          String?
-  role           UserRole         @default(EDITOR)
-  active         Boolean          @default(true)
-  lastLoginAt    DateTime?        @map("last_login_at")
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
-  sessions       Session[]
-  accounts       Account[]
-  publishedPages Page[]           @relation("PagePublisher")
-  media          MediaAsset[]
-  notes          SubmissionNote[]
-  auditLogs      AuditLog[]
-  pageRevisions PageRevision[] @relation("RevisionAuthor")
-  publishedRevisions PageRevision[] @relation("RevisionPublisher")
+  id                 String           @id @default(cuid()) @map("id")
+  name               String
+  email              String           @unique
+  emailVerified      Boolean          @default(false) @map("email_verified")
+  image              String?
+  role               UserRole         @default(EDITOR)
+  active             Boolean          @default(true)
+  lastLoginAt        DateTime?        @map("last_login_at")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  sessions           Session[]
+  accounts           Account[]
+  publishedPages     Page[]           @relation("PagePublisher")
+  media              MediaAsset[]
+  notes              SubmissionNote[]
+  auditLogs          AuditLog[]
+  pageRevisions      PageRevision[]   @relation("RevisionAuthor")
+  publishedRevisions PageRevision[]   @relation("RevisionPublisher")
 
   @@map("users")
   @@schema("solidra")
@@ -191,41 +191,41 @@ model Verification {
 }
 
 model Page {
-  id           String            @id @default(cuid())
-  key          String            @unique
-  slug         String            @unique
-  status       ContentStatus     @default(DRAFT)
-  publishedAt  DateTime?         @map("published_at")
-  publisherId  String?           @map("publisher_id")
-  createdAt    DateTime          @default(now()) @map("created_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
-  publisher    User?             @relation("PagePublisher", fields: [publisherId], references: [id])
-  translations PageTranslation[]
-  sections     PageSection[]
-  revisions    PageRevision[] @relation("PageRevisions")
-  publishedRevisionId String? @unique @map("published_revision_id")
-  publishedRevision PageRevision? @relation("PublishedRevision", fields: [publishedRevisionId], references: [id], onDelete: Restrict)
+  id                  String            @id @default(cuid())
+  key                 String            @unique
+  slug                String            @unique
+  status              ContentStatus     @default(DRAFT)
+  publishedAt         DateTime?         @map("published_at")
+  publisherId         String?           @map("publisher_id")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  publisher           User?             @relation("PagePublisher", fields: [publisherId], references: [id])
+  translations        PageTranslation[]
+  sections            PageSection[]
+  revisions           PageRevision[]    @relation("PageRevisions")
+  publishedRevisionId String?           @unique @map("published_revision_id")
+  publishedRevision   PageRevision?     @relation("PublishedRevision", fields: [publishedRevisionId], references: [id], onDelete: Restrict)
 
   @@map("pages")
   @@schema("solidra")
 }
 
 model PageRevision {
-  id          String   @id @default(cuid())
-  pageId      String   @map("page_id")
-  version     Int
-  immutable   Boolean  @default(false)
-  authorId    String   @map("author_id")
-  publisherId String?  @map("publisher_id")
-  publishedAt DateTime? @map("published_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  page        Page     @relation("PageRevisions", fields: [pageId], references: [id], onDelete: Cascade)
-  publishedFor Page?   @relation("PublishedRevision")
-  author      User     @relation("RevisionAuthor", fields: [authorId], references: [id], onDelete: Restrict)
-  publisher   User?    @relation("RevisionPublisher", fields: [publisherId], references: [id], onDelete: Restrict)
+  id           String                    @id @default(cuid())
+  pageId       String                    @map("page_id")
+  version      Int
+  immutable    Boolean                   @default(false)
+  authorId     String                    @map("author_id")
+  publisherId  String?                   @map("publisher_id")
+  publishedAt  DateTime?                 @map("published_at")
+  createdAt    DateTime                  @default(now()) @map("created_at")
+  updatedAt    DateTime                  @updatedAt @map("updated_at")
+  page         Page                      @relation("PageRevisions", fields: [pageId], references: [id], onDelete: Cascade)
+  publishedFor Page?                     @relation("PublishedRevision")
+  author       User                      @relation("RevisionAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  publisher    User?                     @relation("RevisionPublisher", fields: [publisherId], references: [id], onDelete: Restrict)
   translations PageRevisionTranslation[]
-  sections    PageSectionRevision[]
+  sections     PageSectionRevision[]
 
   @@unique([pageId, version], map: "page_revisions_page_id_version_key")
   @@index([pageId, immutable], map: "page_revisions_page_id_immutable_idx")
@@ -234,13 +234,13 @@ model PageRevision {
 }
 
 model PageRevisionTranslation {
-  id             String   @id @default(cuid())
-  revisionId     String   @map("revision_id")
+  id             String       @id @default(cuid())
+  revisionId     String       @map("revision_id")
   locale         Locale
   title          String
   description    String
-  seoTitle       String?  @map("seo_title")
-  seoDescription String?  @map("seo_description")
+  seoTitle       String?      @map("seo_title")
+  seoDescription String?      @map("seo_description")
   revision       PageRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
 
   @@unique([revisionId, locale], map: "page_revision_translations_revision_id_locale_key")
@@ -249,15 +249,15 @@ model PageRevisionTranslation {
 }
 
 model PageSectionRevision {
-  id           String      @id @default(cuid())
-  revisionId   String      @map("revision_id")
+  id           String                           @id @default(cuid())
+  revisionId   String                           @map("revision_id")
   type         SectionType
   order        Int
-  visible      Boolean     @default(true)
+  visible      Boolean                          @default(true)
   config       Json?
-  mediaId      String?     @map("media_id")
-  revision     PageRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
-  media        MediaAsset? @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  mediaId      String?                          @map("media_id")
+  revision     PageRevision                     @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  media        MediaAsset?                      @relation(fields: [mediaId], references: [id], onDelete: Restrict)
   translations PageSectionRevisionTranslation[]
 
   @@unique([revisionId, order], map: "page_section_revisions_revision_id_order_key")
@@ -266,13 +266,13 @@ model PageSectionRevision {
 }
 
 model PageSectionRevisionTranslation {
-  id        String      @id @default(cuid())
-  sectionId String      @map("section_id")
+  id        String              @id @default(cuid())
+  sectionId String              @map("section_id")
   locale    Locale
   heading   String?
   body      String?
-  ctaLabel  String?     @map("cta_label")
-  ctaUrl    String?     @map("cta_url")
+  ctaLabel  String?             @map("cta_label")
+  ctaUrl    String?             @map("cta_url")
   section   PageSectionRevision @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@unique([sectionId, locale], map: "page_section_revision_translations_section_id_locale_key")
@@ -328,21 +328,21 @@ model PageSectionTranslation {
 }
 
 model MediaAsset {
-  id          String          @id @default(cuid())
-  storagePath String          @unique @map("storage_path")
-  fileName    String          @map("file_name")
-  mimeType    String          @map("mime_type")
-  size        Int
-  width       Int?
-  height      Int?
-  altId       String?         @map("alt_id")
-  altEn       String?         @map("alt_en")
-  visibility  MediaVisibility @default(PUBLIC)
-  ownerId     String          @map("owner_id")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  owner       User            @relation(fields: [ownerId], references: [id])
-  sections    PageSection[]
-  projects    Project[]
+  id               String                @id @default(cuid())
+  storagePath      String                @unique @map("storage_path")
+  fileName         String                @map("file_name")
+  mimeType         String                @map("mime_type")
+  size             Int
+  width            Int?
+  height           Int?
+  altId            String?               @map("alt_id")
+  altEn            String?               @map("alt_en")
+  visibility       MediaVisibility       @default(PUBLIC)
+  ownerId          String                @map("owner_id")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  owner            User                  @relation(fields: [ownerId], references: [id])
+  sections         PageSection[]
+  projects         Project[]
   revisionSections PageSectionRevision[]
 
   @@map("media_assets")
@@ -529,12 +529,12 @@ model Vacancy {
   id             String               @id @default(cuid())
   department     String
   location       String
-  employmentType EmploymentType         @map("employment_type")
-  closingDate    DateTime               @map("closing_date")
+  employmentType EmploymentType       @map("employment_type")
+  closingDate    DateTime             @map("closing_date")
   status         VacancyStatus        @default(DRAFT)
-  publishedAt    DateTime?              @map("published_at")
-  createdAt      DateTime               @default(now()) @map("created_at")
-  updatedAt      DateTime               @updatedAt @map("updated_at")
+  publishedAt    DateTime?            @map("published_at")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
   translations   VacancyTranslation[]
   applications   CareerApplication[]
 

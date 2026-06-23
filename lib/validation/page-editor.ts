@@ -1,0 +1,5 @@
+import {z} from "zod";
+const translation=z.object({locale:z.enum(["ID","EN"]),title:z.string().trim().min(2).max(120),description:z.string().trim().min(10).max(500),seoTitle:z.string().trim().max(70).optional(),seoDescription:z.string().trim().max(160).optional()});
+const sectionTranslation=z.object({locale:z.enum(["ID","EN"]),heading:z.string().trim().max(200).optional(),body:z.string().trim().max(10000).optional(),ctaLabel:z.string().trim().max(80).optional(),ctaUrl:z.string().trim().max(500).optional()});
+export const pageDraftSchema=z.object({translations:z.array(translation).length(2).refine(items=>new Set(items.map(x=>x.locale)).size===2,"Both locales are required"),sections:z.array(z.object({type:z.enum(["HERO","RICH_TEXT","METRICS","SERVICES","PROJECTS","TIMELINE","VALUES","LEADERSHIP","CERTIFICATIONS","FINANCIALS","DOCUMENTS","GOVERNANCE","OFFICES","CONTACT_FORM","BENEFITS","PROCESS","VACANCIES","CTA"]),order:z.number().int().min(0),visible:z.boolean(),config:z.unknown().optional(),mediaId:z.string().nullable().optional(),translations:z.array(sectionTranslation).length(2)})).max(40)});
+export type PageDraftInput=z.infer<typeof pageDraftSchema>;

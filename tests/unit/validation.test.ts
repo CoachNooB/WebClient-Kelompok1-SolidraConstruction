@@ -3,7 +3,7 @@ import { applicationSchema, contactSchema } from "@/lib/validation/submissions";
 
 describe("contactSchema", () => {
   it("accepts a valid contact message", () => {
-    expect(contactSchema.safeParse({ name: "Arico", email: "a@example.com", subject: "Project inquiry", message: "Please contact me about our new project.", consent: true, website: "" }).success).toBe(true);
+    expect(contactSchema.safeParse({ locale: "id", idempotencyKey: "123e4567-e89b-42d3-a456-426614174000", name: "Arico", email: "a@example.com", subject: "Project inquiry", message: "Please contact me about our new project.", consent: true, website: "" }).success).toBe(true);
   });
 
   it("rejects bots and missing consent", () => {

@@ -3,5 +3,9 @@ import path from "node:path";
 
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname, ".") } },
-  test: { environment: "node" },
+  test: {
+    environment: "node",
+    include: ["tests/**/*.test.{ts,tsx}"],
+    exclude: [".worktrees/**", "node_modules/**"],
+  },
 });

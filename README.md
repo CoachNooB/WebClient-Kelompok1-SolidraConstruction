@@ -23,15 +23,34 @@ pnpm build
 Copy `.env.example` to `.env`, configure PostgreSQL, then initialize and seed it:
 
 ```bash
-npx prisma migrate dev --name init
-SEED_ADMIN_PASSWORD='use-a-strong-unique-password' npx prisma db seed
+pnpm prisma:generate
+pnpm prisma:deploy
+pnpm prisma:seed
 ```
 
-## Current integration status
+## Infrastructure setup
 
-The public route surface, responsive design system, bilingual content, forms, API validation, CMS route shell, sitemap, robots configuration, environment contract, complete Prisma schema, and seed data are implemented. API submissions currently validate and acknowledge requests but intentionally do not persist them.
+Create the PostgreSQL `solidra` schema and grant the migration/runtime role ownership or `USAGE, CREATE` before deployment. The committed migration creates all application tables, enums, indexes, and constraints in this schema; it creates no application tables in `public`.
 
-Production deployment still requires wiring PostgreSQL queries into routes, Better Auth sessions and role checks, Supabase Storage, Upstash rate limiting and caching, publication/audit workflows, and database-backed CMS editors. Do not deploy the submission or back-office routes as production-ready until those integrations are complete.
+In Supabase Storage create these buckets:
+
+- `solidra-public`: public CMS images.
+- `solidra-documents`: public investor PDFs.
+- `solidra-cvs`: private applicant files with no public read policy.
+
+Only the server may receive `SUPABASE_SERVICE_ROLE_KEY`. Upstash credentials are also server-only. Submission APIs fail closed when Redis cannot verify rate limits; public reads bypass unavailable Redis and query PostgreSQL.
+
+Better Auth uses credential accounts with registration disabled. Seed the first `SUPER_ADMIN` using `SEED_ADMIN_EMAIL` and a password of at least 12 characters. Roles are `SUPER_ADMIN`, `EDITOR`, and `REVIEWER`; user administration is restricted to super administrators.
+
+## Production deployment
+
+1. Configure all variables documented in `.env.example`.
+2. Run `pnpm install --frozen-lockfile`, `pnpm prisma:generate`, and `pnpm prisma:deploy`.
+3. Run `pnpm prisma:seed` once; repeated runs are safe.
+4. Run `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`.
+5. Verify PostgreSQL application objects exist only under `solidra` and physical identifiers are snake_case.
+6. Verify `solidra-cvs` is private, `/back-office` is disallowed in `robots.txt`, and service-role credentials are absent from client bundles.
+7. Smoke-test both locales, authentication, contact submission, vacancy application, publication, and authorized CV download.
 
 ## Team
 

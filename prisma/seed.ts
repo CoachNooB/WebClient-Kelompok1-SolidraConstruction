@@ -60,7 +60,7 @@ const sectionSeeds: Record<string, Array<{type:SectionType;idHeading:string;enHe
 async function main() {
   const email = process.env.SEED_ADMIN_EMAIL ?? "admin@solidra.co.id";
   const password = process.env.SEED_ADMIN_PASSWORD;
-  if (!password || password.length < 12) throw new Error("SEED_ADMIN_PASSWORD must contain at least 12 characters");
+  if (!password || password.length < 6) throw new Error("SEED_ADMIN_PASSWORD must contain at least 6 characters");
 
   const user = await prisma.user.upsert({
     where: { email },

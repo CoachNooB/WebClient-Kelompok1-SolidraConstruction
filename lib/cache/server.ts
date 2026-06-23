@@ -1,22 +1,36 @@
 import "server-only";
 import { Redis } from "@upstash/redis";
 
+const memoryCache = new Map<string, { expiresAt: number; value: unknown }>();
+
 function redis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL, token = process.env.UPSTASH_REDIS_REST_TOKEN;
   return url && token ? new Redis({ url, token }) : null;
 }
 
 export async function cached<T>(key: string, seconds: number, load: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const memoryHit = memoryCache.get(key);
+  if (memoryHit && memoryHit.expiresAt > now) return memoryHit.value as T;
+
   const connection = redis();
   if (connection) {
-    try { const hit = await connection.get<T>(key); if (hit !== null) return hit; } catch { /* PostgreSQL fallback. */ }
+    try {
+      const hit = await connection.get<T>(key);
+      if (hit !== null) {
+        memoryCache.set(key, { value: hit, expiresAt: now + seconds * 1000 });
+        return hit;
+      }
+    } catch { /* PostgreSQL fallback. */ }
   }
   const value = await load();
+  memoryCache.set(key, { value, expiresAt: now + seconds * 1000 });
   if (connection) try { await connection.set(key, value, { ex: seconds }); } catch { /* Cache is optional for reads. */ }
   return value;
 }
 
 export async function invalidate(keys: string[]): Promise<void> {
+  keys.forEach((key) => memoryCache.delete(key));
   const connection = redis();
   if (!connection || keys.length === 0) return;
   await connection.del(...keys);

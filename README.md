@@ -20,6 +20,13 @@ pnpm lint
 pnpm build
 ```
 
+Unit tests run by default. Database-backed tests are opt-in:
+
+```bash
+RUN_INTEGRATION=1 pnpm test:integration
+pnpm test:e2e
+```
+
 Copy `.env.example` to `.env`, configure PostgreSQL, then initialize and seed it:
 
 ```bash
@@ -29,6 +36,8 @@ pnpm prisma:seed
 ```
 
 ## Infrastructure setup
+
+See `docs/deployment.md` for Redis, Supabase, PostgreSQL, Better Auth, and production checklist details.
 
 Create the PostgreSQL `solidra` schema and grant the migration/runtime role ownership or `USAGE, CREATE` before deployment. The committed migration creates all application tables, enums, indexes, and constraints in this schema; it creates no application tables in `public`.
 
@@ -50,7 +59,8 @@ Better Auth uses credential accounts with registration disabled. Seed the first 
 4. Run `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`.
 5. Verify PostgreSQL application objects exist only under `solidra` and physical identifiers are snake_case.
 6. Verify `solidra-cvs` is private, `/back-office` is disallowed in `robots.txt`, and service-role credentials are absent from client bundles.
-7. Smoke-test both locales, authentication, contact submission, vacancy application, publication, and authorized CV download.
+7. Run `NODE_ENV=production pnpm verify:production`.
+8. Smoke-test both locales, authentication, contact submission, vacancy application, publication, and authorized CV download.
 
 ## Team
 

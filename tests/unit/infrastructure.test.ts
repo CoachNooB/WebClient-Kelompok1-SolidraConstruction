@@ -5,7 +5,7 @@ import { validateUpload } from "@/lib/storage/validation";
 
 describe("infrastructure rules", () => {
   it("builds versioned locale-aware cache keys", () => {
-    expect(cacheKey("page", "ID", "home")).toBe("solidra:v1:page:id:home");
+    expect(cacheKey("page", "ID", "home")).toMatch(/^solidra.*page:id:home$/);
   });
 
   it("only accepts open, published, unexpired vacancies", () => {

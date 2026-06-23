@@ -1,12 +1,21 @@
 import Link from "next/link";
 import {headers} from "next/headers";
 import {notFound} from "next/navigation";
+import {FooterEditorForm} from "@/components/back-office/footer-editor-form";
+import {InvestorDocumentReplaceForm} from "@/components/back-office/investor-document-replace-form";
+import {MediaEditorForm} from "@/components/back-office/media-editor-form";
+import {NavigationEditorForm} from "@/components/back-office/navigation-editor-form";
 import {PageEditorForm} from "@/components/back-office/page-editor-form";
 import {DeleteMediaButton,ResourceStatusForm,UserPolicyForm} from "@/components/back-office/resource-action-form";
 import {SubmissionWorkflowForm} from "@/components/back-office/submission-workflow-form";
+import {VacancyEditorForm} from "@/components/back-office/vacancy-editor-form";
 import {auth} from "@/lib/auth";
+import {can,type StaffRole} from "@/lib/auth/permissions";
 import {prisma} from "@/lib/db";
+import {getFooterEditor} from "@/lib/repositories/footer-editor";
+import {getNavigationEditor} from "@/lib/repositories/navigation-editor";
 import {getPageEditor} from "@/lib/repositories/page-editor";
+import {getVacancyEditor} from "@/lib/repositories/vacancy-editor";
 
 const messageStatuses=["NEW","IN_PROGRESS","RESOLVED","SPAM"];
 const applicationStatuses=["NEW","REVIEWING","SHORTLISTED","REJECTED","HIRED"];
@@ -29,11 +38,11 @@ export default async function Detail({params}:{params:Promise<{section:string;id
   }
   if(section==="investor-documents"){
     const record=await prisma.investorDocument.findUnique({where:{id},include:{translations:true}});if(!record)notFound();
-    return <><Link href="/back-office/investor-documents" className="text-sm text-blue-600">← Investor documents</Link><h1 className="mt-4 text-3xl font-black">{record.translations.find(t=>t.locale==="ID")?.title??record.category}</h1><p className="mt-2 text-slate-600">{record.category} · {record.year} · {(record.size/1024/1024).toFixed(1)} MB</p><ResourceStatusForm endpoint={`/api/back-office/investor-documents/${id}`} status={record.status} statuses={["DRAFT","PUBLISHED","ARCHIVED"]}/></>;
+    return <><Link href="/back-office/investor-documents" className="text-sm text-blue-600">← Investor documents</Link><h1 className="mt-4 text-3xl font-black">{record.translations.find(t=>t.locale==="ID")?.title??record.category}</h1><p className="mt-2 text-slate-600">{record.category} · {record.year} · {(record.size/1024/1024).toFixed(1)} MB</p><InvestorDocumentReplaceForm id={id}/><ResourceStatusForm endpoint={`/api/back-office/investor-documents/${id}`} status={record.status} statuses={["DRAFT","PUBLISHED","ARCHIVED"]}/></>;
   }
   if(section==="vacancies"){
-    const record=await prisma.vacancy.findUnique({where:{id},include:{translations:true,_count:{select:{applications:true}}}});if(!record)notFound();
-    return <><Link href="/back-office/vacancies" className="text-sm text-blue-600">← Vacancies</Link><h1 className="mt-4 text-3xl font-black">{record.translations.find(t=>t.locale==="ID")?.title??record.department}</h1><p className="mt-2 text-slate-600">{record.department} · {record.location} · {record._count.applications} applications · closes {record.closingDate.toLocaleDateString()}</p><ResourceStatusForm endpoint={`/api/back-office/vacancies/${id}`} status={record.status} statuses={["DRAFT","OPEN","CLOSED","ARCHIVED"]}/></>;
+    const record=await getVacancyEditor(id);if(!record)notFound();
+    return <><Link href="/back-office/vacancies" className="text-sm text-blue-600">← Vacancies</Link><h1 className="mt-4 text-3xl font-black">{record.translations.find(t=>t.locale==="ID")?.title??record.department}</h1><p className="mt-2 text-slate-600">{record.department} · {record.location} · {record._count.applications} applications · closes {record.closingDate.toLocaleDateString()}</p><VacancyEditorForm vacancy={record}/><ResourceStatusForm endpoint={`/api/back-office/vacancies/${id}`} status={record.status} statuses={["DRAFT","OPEN","CLOSED","ARCHIVED"]}/></>;
   }
   if(section==="users"){
     const session=await auth.api.getSession({headers:await headers()});if(!session||session.user.role!=="SUPER_ADMIN")notFound();const record=await prisma.user.findUnique({where:{id},select:{id:true,name:true,email:true,role:true,active:true,lastLoginAt:true}});if(!record)notFound();
@@ -41,7 +50,15 @@ export default async function Detail({params}:{params:Promise<{section:string;id
   }
   if(section==="media"){
     const record=await prisma.mediaAsset.findUnique({where:{id},include:{sections:{select:{id:true}},revisionSections:{select:{id:true}},projects:{select:{id:true}}}});if(!record)notFound();const references=record.sections.length+record.revisionSections.length+record.projects.length;
-    return <><Link href="/back-office/media" className="text-sm text-blue-600">← Media</Link><h1 className="mt-4 text-3xl font-black">{record.fileName}</h1><dl className="card mt-8 grid gap-3"><div><dt className="text-sm text-slate-500">Storage path</dt><dd>{record.storagePath}</dd></div><div><dt className="text-sm text-slate-500">Alt text</dt><dd>ID: {record.altId??"—"}<br/>EN: {record.altEn??"—"}</dd></div><div><dt className="text-sm text-slate-500">References</dt><dd>{references}</dd></div></dl><DeleteMediaButton id={id} disabled={references>0}/></>;
+    return <><Link href="/back-office/media" className="text-sm text-blue-600">← Media</Link><h1 className="mt-4 text-3xl font-black">{record.fileName}</h1><dl className="card mt-8 grid gap-3"><div><dt className="text-sm text-slate-500">Storage path</dt><dd>{record.storagePath}</dd></div><div><dt className="text-sm text-slate-500">Alt text</dt><dd>ID: {record.altId??"—"}<br/>EN: {record.altEn??"—"}</dd></div><div><dt className="text-sm text-slate-500">References</dt><dd>{references}</dd></div></dl><MediaEditorForm id={id} altId={record.altId??""} altEn={record.altEn??""}/><DeleteMediaButton id={id} disabled={references>0}/></>;
+  }
+  if(section==="navigation"){
+    const [item,session]=await Promise.all([getNavigationEditor(id),auth.api.getSession({headers:await headers()})]);if(!item||!session||!can(session.user.role as StaffRole,"settings:manage"))notFound();
+    return <><Link href="/back-office/navigation" className="text-sm text-blue-600">← Navigation</Link><h1 className="mt-4 text-3xl font-black">{item.translations.find(t=>t.locale==="ID")?.label??item.url}</h1><NavigationEditorForm item={item}/></>;
+  }
+  if(section==="footer"){
+    const [group,session]=await Promise.all([getFooterEditor(id),auth.api.getSession({headers:await headers()})]);if(!group||!session||!can(session.user.role as StaffRole,"settings:manage"))notFound();
+    return <><Link href="/back-office/footer" className="text-sm text-blue-600">← Footer</Link><h1 className="mt-4 text-3xl font-black">{group.translations.find(t=>t.locale==="ID")?.title??"Footer group"}</h1><FooterEditorForm group={group}/></>;
   }
   notFound();
 }

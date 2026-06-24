@@ -3,6 +3,7 @@ import { ApplicationForm } from "@/components/forms/application-form";
 import { isLocale } from "@/lib/i18n";
 import { formatMetadataTitle } from "@/lib/metadata";
 import { getVacancyBySlug } from "@/lib/repositories/public-content";
+import { serializeJsonLd } from "@/lib/safe-json-ld";
 function list(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
@@ -70,7 +71,7 @@ export default async function Vacancy({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobJson) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jobJson) }}
       />
       <section className="bg-slate-950 py-20 text-white">
         <div className="container">

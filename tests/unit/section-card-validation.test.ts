@@ -28,4 +28,34 @@ describe("section card validation", () => {
       }).success,
     ).toBe(false);
   });
+
+  it.each(["/projects", "https://example.com/report.pdf"])(
+    "accepts safe card URL %s",
+    (url) => {
+      expect(
+        sectionCardMetadataSchema.safeParse({
+          sectionType: "PROJECTS",
+          titleId: "Proyek",
+          titleEn: "Projects",
+          url,
+        }).success,
+      ).toBe(true);
+    },
+  );
+
+  it.each([
+    "//evil.example",
+    "javascript:alert(1)",
+    "data:text/html,test",
+    "http://example.com",
+  ])("rejects unsafe card URL %s", (url) => {
+    expect(
+      sectionCardMetadataSchema.safeParse({
+        sectionType: "PROJECTS",
+        titleId: "Proyek",
+        titleEn: "Projects",
+        url,
+      }).success,
+    ).toBe(false);
+  });
 });

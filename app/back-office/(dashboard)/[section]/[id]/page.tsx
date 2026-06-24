@@ -246,7 +246,12 @@ export default async function Detail({
           {record.sectionType} · Order {record.order}
         </p>
         {imageUrl && (
-          <a className="mt-4 inline-block text-blue-600" href={imageUrl} target="_blank">
+          <a
+            className="mt-4 inline-block text-blue-600"
+            href={imageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             Current image
           </a>
         )}
@@ -344,7 +349,12 @@ export default async function Detail({
             <div>
               <dt className="text-sm text-slate-500">Preview URL</dt>
               <dd className="break-all">
-                <a className="text-blue-600" href={previewUrl} target="_blank">
+                <a
+                  className="text-blue-600"
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {previewUrl}
                 </a>
               </dd>

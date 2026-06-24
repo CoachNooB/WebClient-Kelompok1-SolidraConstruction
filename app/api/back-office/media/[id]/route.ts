@@ -1,17 +1,17 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { can, type StaffRole } from "@/lib/auth/permissions";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { deleteUnusedMedia } from "@/lib/repositories/media";
 import { updateMediaAltText } from "@/lib/repositories/media-editor";
+import { assertSameOrigin } from "@/lib/security/csrf";
 import { mediaAltTextSchema } from "@/lib/validation/media";
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || !can(session.user.role as StaffRole, "content:write"))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+  const session = await requireBackOfficePermission("content:write");
+  if (isAuthResponse(session)) return session;
   const parsed = mediaAltTextSchema.safeParse(await request.json());
   if (!parsed.success)
     return NextResponse.json(
@@ -22,12 +22,13 @@ export async function PATCH(
   return NextResponse.json({ ok: true });
 }
 export async function DELETE(
-  _: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || !can(session.user.role as StaffRole, "content:write"))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+  const session = await requireBackOfficePermission("content:write");
+  if (isAuthResponse(session)) return session;
   try {
     await deleteUnusedMedia((await params).id, session.user.id);
     return NextResponse.json({ ok: true });

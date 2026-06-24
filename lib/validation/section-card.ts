@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { safeCmsUrlSchema } from "@/lib/validation/url";
 
 export const managedCardSectionTypes = [
   "SERVICES",
@@ -19,7 +20,7 @@ export const sectionCardMetadataSchema = z.object({
   sectionType: z.enum(managedCardSectionTypes),
   order: z.coerce.number().int().min(0).default(0),
   value: z.string().trim().max(80).optional(),
-  url: z.string().trim().max(500).optional(),
+  url: safeCmsUrlSchema.optional(),
   titleId: z.string().trim().min(2).max(120),
   titleEn: z.string().trim().min(2).max(120),
   descriptionId: z.string().trim().max(500).optional(),

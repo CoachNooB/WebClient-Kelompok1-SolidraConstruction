@@ -1,8 +1,11 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { can, type StaffRole } from "@/lib/auth/permissions";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { prisma } from "@/lib/db";
+import { assertSameOrigin } from "@/lib/security/csrf";
+import {
+  assertContentLength,
+  uploadRequestLimits,
+} from "@/lib/security/request-size";
 import { removePublicAsset, uploadPublicAsset } from "@/lib/storage/supabase";
 import {
   sectionCardMetadataSchema,
@@ -13,15 +16,14 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session)
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
   const { id } = await params;
   const contentType = request.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    if (!can(session.user.role as StaffRole, "content:publish"))
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const session = await requireBackOfficePermission("content:publish");
+    if (isAuthResponse(session)) return session;
     const parsed = sectionCardStatusSchema.safeParse(await request.json());
     if (!parsed.success)
       return NextResponse.json({ error: "Invalid status" }, { status: 422 });
@@ -46,8 +48,10 @@ export async function PATCH(
     return NextResponse.json({ ok: true });
   }
 
-  if (!can(session.user.role as StaffRole, "content:write"))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = await requireBackOfficePermission("content:write");
+  if (isAuthResponse(session)) return session;
+  const tooLarge = assertContentLength(request, uploadRequestLimits.sectionCard);
+  if (tooLarge) return tooLarge;
   const form = await request.formData();
   const parsed = sectionCardMetadataSchema.safeParse(
     Object.fromEntries(form),

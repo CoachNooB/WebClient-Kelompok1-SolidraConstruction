@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { safeCmsUrlSchema } from "@/lib/validation/url";
 const translation = z.object({
   locale: z.enum(["ID", "EN"]),
   title: z.string().trim().min(2).max(120),
@@ -11,7 +12,7 @@ const sectionTranslation = z.object({
   heading: z.string().trim().max(200).optional(),
   body: z.string().trim().max(10000).optional(),
   ctaLabel: z.string().trim().max(80).optional(),
-  ctaUrl: z.string().trim().max(500).optional(),
+  ctaUrl: safeCmsUrlSchema.optional(),
 });
 export const pageDraftSchema = z.object({
   translations: z

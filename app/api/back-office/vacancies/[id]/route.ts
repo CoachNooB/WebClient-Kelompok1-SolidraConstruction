@@ -1,12 +1,11 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { can, type StaffRole } from "@/lib/auth/permissions";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { prisma } from "@/lib/db";
 import { invalidate } from "@/lib/cache/server";
 import { cacheKeys } from "@/lib/cache/keys";
 import { updateVacancy } from "@/lib/repositories/vacancy-editor";
+import { assertSameOrigin } from "@/lib/security/csrf";
 import { vacancyEditorSchema } from "@/lib/validation/vacancy-editor";
 const schema = z.object({
   status: z.enum(["DRAFT", "OPEN", "CLOSED", "ARCHIVED"]),
@@ -15,14 +14,13 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session)
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
   const body = await request.json();
   const { id } = await params;
   if (Object.keys(body).length === 1 && "status" in body) {
-    if (!can(session.user.role as StaffRole, "content:publish"))
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const session = await requireBackOfficePermission("content:publish");
+    if (isAuthResponse(session)) return session;
     const parsed = schema.safeParse(body);
     if (!parsed.success)
       return NextResponse.json({ error: "Invalid status" }, { status: 422 });
@@ -47,8 +45,8 @@ export async function PATCH(
     await invalidate([cacheKeys.vacancies("ID"), cacheKeys.vacancies("EN")]);
     return NextResponse.json({ ok: true });
   }
-  if (!can(session.user.role as StaffRole, "content:write"))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = await requireBackOfficePermission("content:write");
+  if (isAuthResponse(session)) return session;
   const parsed = vacancyEditorSchema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json(

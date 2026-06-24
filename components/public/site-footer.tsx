@@ -42,6 +42,7 @@ export function SiteFooter({
                   key={link.id}
                   href={link.external ? link.url : `/${locale}${link.url}`}
                   target={link.external ? "_blank" : undefined}
+                  rel={link.external ? "noopener noreferrer" : undefined}
                 >
                   {link.label}
                 </Link>

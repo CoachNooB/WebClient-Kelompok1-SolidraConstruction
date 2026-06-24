@@ -1,16 +1,13 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { can, type StaffRole } from "@/lib/auth/permissions";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { prisma } from "@/lib/db";
 import { createCvDownloadUrl } from "@/lib/storage/supabase";
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || !can(session.user.role as StaffRole, "submissions:read"))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const session = await requireBackOfficePermission("submissions:read");
+  if (isAuthResponse(session)) return session;
   const { id } = await params;
   const application = await prisma.careerApplication.findUnique({
     where: { id },

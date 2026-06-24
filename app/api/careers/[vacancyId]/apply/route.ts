@@ -6,15 +6,13 @@ import {
   getEligibleVacancy,
 } from "@/lib/repositories/submissions";
 import { claimOnce, enforceRateLimit, releaseClaim } from "@/lib/redis";
+import { getClientIp } from "@/lib/security/client-ip";
+import {
+  assertContentLength,
+  uploadRequestLimits,
+} from "@/lib/security/request-size";
 import { removeCv, uploadCv } from "@/lib/storage/supabase";
 
-function ip(request: Request) {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 function fingerprint(vacancyId: string, email: string) {
   return createHash("sha256")
     .update(`${vacancyId}:${email.trim().toLowerCase()}`)
@@ -26,6 +24,8 @@ export async function POST(
   { params }: { params: Promise<{ vacancyId: string }> },
 ) {
   const { vacancyId } = await params;
+  const tooLarge = assertContentLength(request, uploadRequestLimits.cv);
+  if (tooLarge) return tooLarge;
   const form = await request.formData();
   const parsed = applicationSchema.safeParse({
     locale: form.get("locale"),
@@ -50,7 +50,7 @@ export async function POST(
   const duplicateKey = fingerprint(vacancyId, parsed.data.email);
   let cvPath: string | undefined;
   try {
-    await enforceRateLimit("application", ip(request));
+    await enforceRateLimit("application", getClientIp(request));
     if (
       !(await claimOnce(
         "application-idempotency",

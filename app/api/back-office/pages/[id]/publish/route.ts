@@ -1,18 +1,18 @@
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { can, type StaffRole } from "@/lib/auth/permissions";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { publicPagePaths } from "@/lib/cache/revalidation";
 import { getPageEditor } from "@/lib/repositories/page-editor";
 import { publishRevision } from "@/lib/repositories/publication";
+import { assertSameOrigin } from "@/lib/security/csrf";
 export async function POST(
-  _: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || !can(session.user.role as StaffRole, "content:publish"))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+  const session = await requireBackOfficePermission("content:publish");
+  if (isAuthResponse(session)) return session;
   const page = await getPageEditor((await params).id);
   const revision = page?.revisions[0];
   if (!revision || revision.immutable)

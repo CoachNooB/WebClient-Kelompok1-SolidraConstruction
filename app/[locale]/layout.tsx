@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n";
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
+import { env } from "@/lib/env";
+import { serializeJsonLd } from "@/lib/safe-json-ld";
 import {
   getCompanySettings,
   getFooter,
@@ -15,9 +17,11 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = env.integrationsEnabled
+    ? env.NEXT_PUBLIC_SITE_URL
+    : process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   return {
-    metadataBase: new URL(base),
+    metadataBase: new URL(siteUrl),
     alternates: {
       canonical: `/${locale}`,
       languages: { id: "/id", en: "/en" },
@@ -48,7 +52,9 @@ export default async function LocaleLayout({
     "@context": "https://schema.org",
     "@type": "Organization",
     name: company.name,
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    url: env.integrationsEnabled
+      ? env.NEXT_PUBLIC_SITE_URL
+      : process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
     email: company.email,
     telephone: company.phone,
   };
@@ -56,7 +62,7 @@ export default async function LocaleLayout({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(organization) }}
       />
       <SiteHeader locale={locale} items={navigation} />
       <main>{children}</main>

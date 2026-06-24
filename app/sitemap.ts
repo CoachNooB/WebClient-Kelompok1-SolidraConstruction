@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
+import { env } from "@/lib/env";
 import { getVacancies } from "@/lib/repositories/public-content";
 export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const base = env.integrationsEnabled
+    ? env.NEXT_PUBLIC_SITE_URL
+    : process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const pages = ["", "/about", "/investors", "/contact", "/careers"];
   const entries: MetadataRoute.Sitemap = [];
   for (const locale of ["id", "en"] as const) {

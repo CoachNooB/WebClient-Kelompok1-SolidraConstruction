@@ -256,4 +256,48 @@ describe("SectionRenderer", () => {
       screen.queryByLabelText("Construction photo placeholder"),
     ).toBeNull();
   });
+
+  it("prefixes internal CTA paths with locale", () => {
+    render(
+      <SectionRenderer
+        locale="en"
+        section={{
+          id: "cta",
+          type: "CTA",
+          order: 0,
+          heading: "Start a project",
+          body: null,
+          ctaLabel: "Contact",
+          ctaUrl: "/contact",
+          config: null,
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("link", { name: "Contact" }).getAttribute("href"),
+    ).toBe("/en/contact");
+  });
+
+  it("renders HTTPS CTA URLs directly", () => {
+    render(
+      <SectionRenderer
+        locale="en"
+        section={{
+          id: "cta",
+          type: "CTA",
+          order: 0,
+          heading: "Download report",
+          body: null,
+          ctaLabel: "Report",
+          ctaUrl: "https://example.com/report.pdf",
+          config: null,
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("link", { name: "Report" }).getAttribute("href"),
+    ).toBe("https://example.com/report.pdf");
+  });
 });

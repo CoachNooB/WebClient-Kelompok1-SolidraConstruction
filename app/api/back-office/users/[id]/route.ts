@@ -1,9 +1,9 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { prisma } from "@/lib/db";
 import { validateStaffUpdate } from "@/lib/auth/user-policy";
+import { assertSameOrigin } from "@/lib/security/csrf";
 const inputSchema = z.object({
   role: z.enum(["SUPER_ADMIN", "EDITOR", "REVIEWER"]),
   active: z.boolean(),
@@ -12,9 +12,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || session.user.role !== "SUPER_ADMIN")
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+  const session = await requireBackOfficePermission("users:manage");
+  if (isAuthResponse(session)) return session;
   const parsed = inputSchema.safeParse(await request.json());
   if (!parsed.success)
     return NextResponse.json({ error: "Invalid user update" }, { status: 422 });
@@ -40,9 +41,14 @@ export async function PATCH(
       { status: 409 },
     );
   }
-  await prisma.$transaction([
-    prisma.user.update({ where: { id }, data: parsed.data }),
-    prisma.auditLog.create({
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({ where: { id }, data: parsed.data });
+
+    if (!parsed.data.active) {
+      await tx.session.deleteMany({ where: { userId: id } });
+    }
+
+    await tx.auditLog.create({
       data: {
         actorId: session.user.id,
         action: "USER_UPDATED",
@@ -50,7 +56,7 @@ export async function PATCH(
         entityId: id,
         metadata: parsed.data,
       },
-    }),
-  ]);
+    });
+  });
   return NextResponse.json({ ok: true });
 }

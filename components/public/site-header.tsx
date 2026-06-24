@@ -33,6 +33,7 @@ export function SiteHeader({
               key={item.id}
               href={item.external ? item.url : `/${locale}${item.url}`}
               target={item.external ? "_blank" : undefined}
+              rel={item.external ? "noopener noreferrer" : undefined}
               prefetch={item.external ? false : undefined}
               className="text-sm font-semibold text-slate-600 hover:text-blue-600"
             >

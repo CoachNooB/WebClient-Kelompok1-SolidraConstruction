@@ -20,6 +20,7 @@ describe("parseEnvironment", () => {
       DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
       BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
       BETTER_AUTH_URL: "https://solidra.example.com",
+      NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
       SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
       UPSTASH_REDIS_REST_URL: "https://redis.example.com",
@@ -27,5 +28,68 @@ describe("parseEnvironment", () => {
     });
 
     expect(result.integrationsEnabled).toBe(true);
+  });
+
+  it("rejects production auth secrets shorter than 32 characters", () => {
+    expect(() =>
+      parseEnvironment({
+        NODE_ENV: "production",
+        DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
+        BETTER_AUTH_SECRET: "short",
+        BETTER_AUTH_URL: "https://solidra.example.com",
+        NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+        UPSTASH_REDIS_REST_URL: "https://redis.example.com",
+        UPSTASH_REDIS_REST_TOKEN: "redis-token",
+      }),
+    ).toThrow(/BETTER_AUTH_SECRET/);
+  });
+
+  it("rejects production database URLs that are not PostgreSQL", () => {
+    expect(() =>
+      parseEnvironment({
+        NODE_ENV: "production",
+        DATABASE_URL: "mysql://user:pass@localhost:3306/solidra",
+        BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
+        BETTER_AUTH_URL: "https://solidra.example.com",
+        NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+        UPSTASH_REDIS_REST_URL: "https://redis.example.com",
+        UPSTASH_REDIS_REST_TOKEN: "redis-token",
+      }),
+    ).toThrow(/DATABASE_URL/);
+  });
+
+  it("requires production public site URL", () => {
+    expect(() =>
+      parseEnvironment({
+        NODE_ENV: "production",
+        DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
+        BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
+        BETTER_AUTH_URL: "https://solidra.example.com",
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+        UPSTASH_REDIS_REST_URL: "https://redis.example.com",
+        UPSTASH_REDIS_REST_TOKEN: "redis-token",
+      }),
+    ).toThrow(/NEXT_PUBLIC_SITE_URL/);
+  });
+
+  it("rejects HTTP production auth and public URLs", () => {
+    expect(() =>
+      parseEnvironment({
+        NODE_ENV: "production",
+        DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
+        BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
+        BETTER_AUTH_URL: "http://solidra.example.com",
+        NEXT_PUBLIC_SITE_URL: "http://solidra.example.com",
+        NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+        UPSTASH_REDIS_REST_URL: "https://redis.example.com",
+        UPSTASH_REDIS_REST_TOKEN: "redis-token",
+      }),
+    ).toThrow(/HTTPS/);
   });
 });

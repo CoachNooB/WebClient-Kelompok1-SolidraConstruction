@@ -1,10 +1,10 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { hashPassword } from "better-auth/crypto";
-import { auth } from "@/lib/auth";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { createStaffAccountErrorResponse } from "@/lib/auth/staff-create";
 import { prisma } from "@/lib/db";
+import { assertSameOrigin } from "@/lib/security/csrf";
 const inputSchema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.email(),
@@ -12,9 +12,10 @@ const inputSchema = z.object({
   role: z.enum(["SUPER_ADMIN", "EDITOR", "REVIEWER"]),
 });
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || session.user.role !== "SUPER_ADMIN")
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+  const session = await requireBackOfficePermission("users:manage");
+  if (isAuthResponse(session)) return session;
   const parsed = inputSchema.safeParse(await request.json());
   if (!parsed.success)
     return NextResponse.json(

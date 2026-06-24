@@ -1,11 +1,14 @@
 import "server-only";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
+import { env } from "@/lib/env";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 const connectionString =
-  process.env.DATABASE_URL ??
-  "postgresql://postgres:postgres@localhost:5432/solidra";
+  env.integrationsEnabled
+    ? env.DATABASE_URL
+    : process.env.DATABASE_URL ??
+      "postgresql://postgres:postgres@localhost:5432/solidra";
 
 export const prisma =
   globalForPrisma.prisma ??

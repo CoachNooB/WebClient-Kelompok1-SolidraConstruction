@@ -10,6 +10,7 @@ import {
   UserRole,
   SectionType,
 } from "../generated/prisma/client";
+import { validateSeedAdminPassword } from "./seed-validation";
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl)
@@ -305,9 +306,7 @@ const sectionSeeds: Record<
 
 async function main() {
   const email = process.env.SEED_ADMIN_EMAIL ?? "admin@solidra.co.id";
-  const password = process.env.SEED_ADMIN_PASSWORD;
-  if (!password || password.length < 6)
-    throw new Error("SEED_ADMIN_PASSWORD must contain at least 6 characters");
+  const password = validateSeedAdminPassword(process.env.SEED_ADMIN_PASSWORD);
 
   const user = await prisma.user.upsert({
     where: { email },

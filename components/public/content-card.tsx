@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CardImage } from "@/components/public/card-image";
+import { isSafeCmsUrl } from "@/lib/validation/url";
 
 export type CardItem = {
   title?: string;
@@ -38,7 +39,7 @@ export function ContentCard({
       {item.description && (
         <p className="mt-3 leading-7 text-slate-600">{item.description}</p>
       )}
-      {item.url && locale && (
+      {item.url && locale && isSafeCmsUrl(item.url) && (
         <Link
           className="mt-4 inline-block font-semibold text-blue-600"
           href={item.url.startsWith("/") ? `/${locale}${item.url}` : item.url}

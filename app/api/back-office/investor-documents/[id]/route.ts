@@ -1,9 +1,8 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { can, type StaffRole } from "@/lib/auth/permissions";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { prisma } from "@/lib/db";
+import { assertSameOrigin } from "@/lib/security/csrf";
 import { invalidate } from "@/lib/cache/server";
 import { cacheKeys } from "@/lib/cache/keys";
 const schema = z.object({ status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]) });
@@ -11,9 +10,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || !can(session.user.role as StaffRole, "content:publish"))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+  const session = await requireBackOfficePermission("content:publish");
+  if (isAuthResponse(session)) return session;
   const parsed = schema.safeParse(await request.json());
   if (!parsed.success)
     return NextResponse.json({ error: "Invalid status" }, { status: 422 });

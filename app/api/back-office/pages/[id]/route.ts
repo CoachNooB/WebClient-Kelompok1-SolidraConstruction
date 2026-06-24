@@ -1,16 +1,16 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { can, type StaffRole } from "@/lib/auth/permissions";
+import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { pageDraftSchema } from "@/lib/validation/page-editor";
 import { savePageDraft } from "@/lib/repositories/page-editor";
+import { assertSameOrigin } from "@/lib/security/csrf";
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || !can(session.user.role as StaffRole, "content:write"))
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+  const session = await requireBackOfficePermission("content:write");
+  if (isAuthResponse(session)) return session;
   const parsed = pageDraftSchema.safeParse(await request.json());
   if (!parsed.success)
     return NextResponse.json(

@@ -52,9 +52,36 @@ BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=
 SEED_ADMIN_EMAIL=
 SEED_ADMIN_PASSWORD=
+TRUSTED_CLIENT_IP_HEADER=x-vercel-forwarded-for
 ```
 
 Seed creates the initial administrator account. Registration remains disabled.
+
+Set `TRUSTED_CLIENT_IP_HEADER` to the single client IP header normalized by the hosting platform or trusted reverse proxy. Do not set this to raw `x-forwarded-for` unless the proxy strips untrusted inbound values.
+
+## Request Body Limits
+
+Upload endpoints require a valid `Content-Length` header and reject unknown-size bodies with `411 Length Required`.
+
+Configure the reverse proxy or hosting platform to reject oversized bodies before they reach Next.js:
+
+- Career CV uploads: 7 MB
+- CMS image uploads: 10 MB
+- CMS section card image uploads: 10 MB
+- Investor documents: 17 MB
+
+## Production URLs
+
+Production requires HTTPS values for:
+
+- `BETTER_AUTH_URL`
+- `NEXT_PUBLIC_SITE_URL`
+
+Do not use localhost or plain HTTP in production.
+
+## CSP Hardening
+
+Production removes `unsafe-eval` from `script-src`. `unsafe-inline` remains temporarily for compatibility with current Next.js inline scripts/styles; nonce-based CSP is a follow-up hardening item because it requires request-aware header generation.
 
 ## Production Checklist
 

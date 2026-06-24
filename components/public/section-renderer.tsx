@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CardCarousel } from "@/components/public/card-carousel";
 import { ContentCard, type CardItem } from "@/components/public/content-card";
+import { localizedHref } from "@/lib/public-url";
 import type { SectionDto } from "@/lib/repositories/public-content";
 
 function items(config: unknown): CardItem[] {
@@ -79,7 +80,7 @@ export function SectionRenderer({
           {section.ctaLabel && section.ctaUrl && (
             <Link
               className="btn bg-white text-blue-700"
-              href={`/${locale}${section.ctaUrl}`}
+              href={localizedHref(locale, section.ctaUrl)}
             >
               {section.ctaLabel}
             </Link>

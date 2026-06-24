@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PageHero } from "@/components/public/page-hero";
 import { SectionRenderer } from "@/components/public/section-renderer";
+import { localizedHref } from "@/lib/public-url";
 import { getPublishedPage } from "@/lib/repositories/public-content";
 
 export async function DatabasePage({
@@ -24,7 +25,7 @@ export async function DatabasePage({
           title={hero?.heading ?? page.title}
           description={hero?.body ?? page.description}
           cta={hero?.ctaLabel ?? undefined}
-          href={hero?.ctaUrl ? `/${locale}${hero.ctaUrl}` : undefined}
+          href={hero?.ctaUrl ? localizedHref(locale, hero.ctaUrl) : undefined}
         />
       }{" "}
       {page.sections.map((section) => (

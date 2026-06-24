@@ -2,14 +2,7 @@ import { NextResponse } from "next/server";
 import { contactSchema } from "@/lib/validation/submissions";
 import { createContactMessage } from "@/lib/repositories/submissions";
 import { claimOnce, enforceRateLimit, releaseClaim } from "@/lib/redis";
-
-function ip(request: Request) {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
+import { getClientIp } from "@/lib/security/client-ip";
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -37,7 +30,7 @@ export async function POST(request: Request) {
       { status: 422 },
     );
   try {
-    await enforceRateLimit("contact", ip(request));
+    await enforceRateLimit("contact", getClientIp(request));
     if (!(await claimOnce("contact", parsed.data.idempotencyKey, 24 * 60 * 60)))
       return NextResponse.json({ ok: true }, { status: 200 });
     await createContactMessage({

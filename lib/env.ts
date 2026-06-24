@@ -1,10 +1,19 @@
 import { z } from "zod";
 
+const httpsUrl = z.url().refine((value) => {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}, "Use an HTTPS URL");
+
 const productionEnvironment = z.object({
   NODE_ENV: z.literal("production"),
   DATABASE_URL: z.url().startsWith("postgresql://"),
   BETTER_AUTH_SECRET: z.string().min(32),
-  BETTER_AUTH_URL: z.url(),
+  BETTER_AUTH_URL: httpsUrl,
+  NEXT_PUBLIC_SITE_URL: httpsUrl,
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   UPSTASH_REDIS_REST_URL: z.url(),

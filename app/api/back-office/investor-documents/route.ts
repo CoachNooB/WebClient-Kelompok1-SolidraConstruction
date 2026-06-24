@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       },
       { status: 422 },
     );
-  let uploaded: { path: string; publicUrl: string } | undefined;
+  let uploaded: { path: string } | undefined;
   try {
     const stored = await uploadPublicAsset(file, "document");
     uploaded = stored;

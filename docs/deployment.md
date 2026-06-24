@@ -19,11 +19,11 @@ Production should use a stable prefix such as `solidra:v1`. Changing the prefix 
 
 Create these buckets:
 
-- `solidra-public`: public CMS images.
-- `solidra-documents`: public investor PDFs.
-- `solidra-cvs`: private applicant CV files.
+- `solidra-public`: CMS images.
+- `solidra-documents`: investor PDFs.
+- `solidra-cvs`: applicant CV files.
 
-`SUPABASE_SERVICE_ROLE_KEY` must only be available server-side. The CV bucket must not expose public read access.
+Keep every bucket private. `SUPABASE_SERVICE_ROLE_KEY` must only be available server-side. The application stores object paths in PostgreSQL and generates signed Supabase URLs for previews and downloads.
 
 ## PostgreSQL
 
@@ -63,5 +63,5 @@ Seed creates the initial administrator account. Registration remains disabled.
 - Run `NODE_ENV=production pnpm verify:production`.
 - Confirm `/back-office` is excluded from indexing.
 - Confirm the Supabase service-role key is server-only.
-- Confirm the CV bucket is private.
+- Confirm every Supabase bucket is private.
 - Confirm Redis credentials and `REDIS_KEY_PREFIX` are set.

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { FooterEditorForm } from "@/components/back-office/footer-editor-form";
 import { InvestorDocumentReplaceForm } from "@/components/back-office/investor-document-replace-form";
@@ -11,16 +10,21 @@ import {
   ResourceStatusForm,
   UserPolicyForm,
 } from "@/components/back-office/resource-action-form";
+import { SectionCardEditorForm } from "@/components/back-office/section-card-editor-form";
 import { SubmissionWorkflowForm } from "@/components/back-office/submission-workflow-form";
 import { VacancyEditorForm } from "@/components/back-office/vacancy-editor-form";
-import { auth } from "@/lib/auth";
-import { can, type StaffRole } from "@/lib/auth/permissions";
+import {
+  getBackOfficeSessionOrRedirect,
+  redirectIfUnauthorized,
+} from "@/lib/auth/back-office";
+import { isBackOfficeSection } from "@/lib/auth/back-office-sections";
+import type { StaffRole } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/db";
 import { getFooterEditor } from "@/lib/repositories/footer-editor";
 import { getNavigationEditor } from "@/lib/repositories/navigation-editor";
 import { getPageEditor } from "@/lib/repositories/page-editor";
 import { getVacancyEditor } from "@/lib/repositories/vacancy-editor";
-import { publicAssetUrl } from "@/lib/storage/public-url";
+import { createPublicAssetDownloadUrl } from "@/lib/storage/supabase";
 
 const messageStatuses = ["NEW", "IN_PROGRESS", "RESOLVED", "SPAM"];
 const applicationStatuses = [
@@ -38,12 +42,13 @@ export default async function Detail({
   params: Promise<{ section: string; id: string }>;
 }) {
   const { section, id } = await params;
+  const session = await getBackOfficeSessionOrRedirect();
+  if (isBackOfficeSection(section))
+    redirectIfUnauthorized(session.user.role as StaffRole, section);
+
   if (section === "pages") {
-    const [page, session] = await Promise.all([
-      getPageEditor(id),
-      auth.api.getSession({ headers: await headers() }),
-    ]);
-    if (!page || !session) notFound();
+    const page = await getPageEditor(id);
+    if (!page) notFound();
     const revision = page.revisions[0];
     if (!revision) notFound();
     return (
@@ -219,6 +224,41 @@ export default async function Detail({
       </>
     );
   }
+  if (section === "section-cards") {
+    const record = await prisma.sectionCard.findUnique({
+      where: { id },
+      include: { translations: true, image: true },
+    });
+    if (!record) notFound();
+    const imageUrl = record.image
+      ? await createPublicAssetDownloadUrl(record.image.storagePath, "image")
+      : null;
+    return (
+      <>
+        <Link href="/back-office/section-cards" className="text-sm text-blue-600">
+          ← Section cards
+        </Link>
+        <h1 className="mt-4 text-3xl font-black">
+          {record.translations.find((t) => t.locale === "ID")?.title ??
+            record.sectionType}
+        </h1>
+        <p className="mt-2 text-slate-600">
+          {record.sectionType} · Order {record.order}
+        </p>
+        {imageUrl && (
+          <a className="mt-4 inline-block text-blue-600" href={imageUrl} target="_blank">
+            Current image
+          </a>
+        )}
+        <SectionCardEditorForm card={record} />
+        <ResourceStatusForm
+          endpoint={`/api/back-office/section-cards/${id}`}
+          status={record.status}
+          statuses={["DRAFT", "PUBLISHED", "ARCHIVED"]}
+        />
+      </>
+    );
+  }
   if (section === "vacancies") {
     const record = await getVacancyEditor(id);
     if (!record) notFound();
@@ -245,8 +285,6 @@ export default async function Detail({
     );
   }
   if (section === "users") {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session || session.user.role !== "SUPER_ADMIN") notFound();
     const record = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -287,7 +325,10 @@ export default async function Detail({
       record.sections.length +
       record.revisionSections.length +
       record.projects.length;
-    const publicUrl = publicAssetUrl(record.storagePath, "image");
+    const previewUrl = await createPublicAssetDownloadUrl(
+      record.storagePath,
+      "image",
+    );
     return (
       <>
         <Link href="/back-office/media" className="text-sm text-blue-600">
@@ -299,12 +340,12 @@ export default async function Detail({
             <dt className="text-sm text-slate-500">Storage path</dt>
             <dd>{record.storagePath}</dd>
           </div>
-          {publicUrl && (
+          {previewUrl && (
             <div>
-              <dt className="text-sm text-slate-500">Public URL</dt>
+              <dt className="text-sm text-slate-500">Preview URL</dt>
               <dd className="break-all">
-                <a className="text-blue-600" href={publicUrl} target="_blank">
-                  {publicUrl}
+                <a className="text-blue-600" href={previewUrl} target="_blank">
+                  {previewUrl}
                 </a>
               </dd>
             </div>
@@ -332,16 +373,8 @@ export default async function Detail({
     );
   }
   if (section === "navigation") {
-    const [item, session] = await Promise.all([
-      getNavigationEditor(id),
-      auth.api.getSession({ headers: await headers() }),
-    ]);
-    if (
-      !item ||
-      !session ||
-      !can(session.user.role as StaffRole, "settings:manage")
-    )
-      notFound();
+    const item = await getNavigationEditor(id);
+    if (!item) notFound();
     return (
       <>
         <Link href="/back-office/navigation" className="text-sm text-blue-600">
@@ -355,16 +388,8 @@ export default async function Detail({
     );
   }
   if (section === "footer") {
-    const [group, session] = await Promise.all([
-      getFooterEditor(id),
-      auth.api.getSession({ headers: await headers() }),
-    ]);
-    if (
-      !group ||
-      !session ||
-      !can(session.user.role as StaffRole, "settings:manage")
-    )
-      notFound();
+    const group = await getFooterEditor(id);
+    if (!group) notFound();
     return (
       <>
         <Link href="/back-office/footer" className="text-sm text-blue-600">

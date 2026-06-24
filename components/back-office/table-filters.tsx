@@ -8,7 +8,7 @@ export function TableFilters({
   statuses: string[];
 }) {
   return (
-    <form className="mt-6 flex flex-wrap gap-3">
+    <form className="mt-6 flex flex-wrap gap-3" data-read-only-allowed="true">
       <input
         name="q"
         defaultValue={q}

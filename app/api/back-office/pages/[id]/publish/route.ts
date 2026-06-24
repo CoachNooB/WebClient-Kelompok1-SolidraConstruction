@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { can, type StaffRole } from "@/lib/auth/permissions";
+import { publicPagePaths } from "@/lib/cache/revalidation";
 import { getPageEditor } from "@/lib/repositories/page-editor";
 import { publishRevision } from "@/lib/repositories/publication";
 export async function POST(
@@ -16,9 +18,9 @@ export async function POST(
   if (!revision || revision.immutable)
     return NextResponse.json({ error: "No draft revision" }, { status: 409 });
   try {
-    return NextResponse.json(
-      await publishRevision(revision.id, session.user.id),
-    );
+    const result = await publishRevision(revision.id, session.user.id);
+    for (const path of publicPagePaths(page.key)) revalidatePath(path);
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to publish" },

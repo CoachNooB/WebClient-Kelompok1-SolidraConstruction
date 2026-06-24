@@ -1,11 +1,25 @@
 import { z } from "zod";
 
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^[0-9+]+$/, "Phone can only contain numbers and +");
+
+const optionalPhoneSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => value === "" || /^[0-9+]+$/.test(value),
+    "Phone can only contain numbers and +",
+  )
+  .pipe(z.string().max(30));
+
 export const contactSchema = z.object({
   locale: z.enum(["id", "en"]),
   idempotencyKey: z.uuid(),
   name: z.string().trim().min(2).max(100),
   email: z.email(),
-  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  phone: optionalPhoneSchema.optional(),
   company: z.string().trim().max(150).optional().or(z.literal("")),
   subject: z.string().trim().min(3).max(150),
   message: z.string().trim().min(10).max(5000),
@@ -31,7 +45,7 @@ export const applicationSchema = z.object({
   idempotencyKey: z.uuid(),
   name: z.string().trim().min(2).max(100),
   email: z.email(),
-  phone: z.string().trim().min(8).max(30),
+  phone: phoneSchema.pipe(z.string().min(8).max(30)),
   coverLetter: z.string().trim().min(20).max(5000),
   consent: z.literal(true),
   cv: cvSchema,

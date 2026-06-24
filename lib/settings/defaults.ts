@@ -12,7 +12,7 @@ export type CompanySettings = {
 export const defaultCompanySettings: CompanySettings = {
   name: "Solidra Construction",
   email: "info@solidra.co.id",
-  phone: "+62 21 555 0142",
+  phone: "+62215550142",
   defaultLocale: "ID",
   descriptionId: "Membangun fondasi kuat bagi masa depan Indonesia.",
   descriptionEn: "Building strong foundations for Indonesia's future.",

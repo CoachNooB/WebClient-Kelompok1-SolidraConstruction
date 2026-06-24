@@ -426,7 +426,7 @@ async function main() {
       value: {
         name: "Solidra Construction",
         email: "info@solidra.co.id",
-        phone: "+62 21 555 0142",
+        phone: "+62215550142",
         defaultLocale: "ID",
       },
     },
@@ -511,7 +511,7 @@ async function main() {
       key: "head-office",
       address: "Solidra Tower, Jl. Jenderal Sudirman Kav. 48",
       city: "Jakarta 12930, Indonesia",
-      phone: "+62 21 555 0142",
+      phone: "+62215550142",
       email: "info@solidra.co.id",
       hours: { weekdays: "08:00-17:00 WIB" },
       translations: {

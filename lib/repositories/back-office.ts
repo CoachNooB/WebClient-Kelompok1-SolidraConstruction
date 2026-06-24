@@ -40,6 +40,24 @@ export async function listBackOfficeRows(
       meta: `${x.category} · ${x.year}`,
       status: x.status,
     }));
+  if (section === "section-cards")
+    return (
+      await prisma.sectionCard.findMany({
+        orderBy: [{ sectionType: "asc" }, { order: "asc" }],
+        select: {
+          id: true,
+          sectionType: true,
+          order: true,
+          status: true,
+          translations: { where: { locale: "ID" }, select: { title: true } },
+        },
+      })
+    ).map((x) => ({
+      id: x.id,
+      title: x.translations[0]?.title ?? x.sectionType,
+      meta: `${x.sectionType} · Order ${x.order}`,
+      status: x.status,
+    }));
   if (section === "vacancies")
     return (
       await prisma.vacancy.findMany({

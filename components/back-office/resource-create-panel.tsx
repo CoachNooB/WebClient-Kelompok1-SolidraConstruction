@@ -13,7 +13,11 @@ export function ResourceCreatePanel({ section }: { section: string }) {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
 
-  if (!["investor-documents", "media", "vacancies", "users"].includes(section))
+  if (
+    !["section-cards", "investor-documents", "media", "vacancies", "users"].includes(
+      section,
+    )
+  )
     return null;
 
   function toggleOpen() {
@@ -118,6 +122,44 @@ export function ResourceCreatePanel({ section }: { section: string }) {
                 <Input name="descriptionId" placeholder="Deskripsi (ID)" />
                 <Input name="descriptionEn" placeholder="Description (EN)" />
               </div>
+            </>
+          )}
+          {section === "section-cards" && (
+            <>
+              <div className="grid gap-3 md:grid-cols-2">
+                <select
+                  required
+                  name="sectionType"
+                  className="min-h-11 rounded border px-3"
+                >
+                  <option>SERVICES</option>
+                  <option>PROJECTS</option>
+                  <option>TIMELINE</option>
+                  <option>VALUES</option>
+                  <option>LEADERSHIP</option>
+                  <option>CERTIFICATIONS</option>
+                  <option>FINANCIALS</option>
+                  <option>GOVERNANCE</option>
+                  <option>OFFICES</option>
+                  <option>BENEFITS</option>
+                  <option>PROCESS</option>
+                  <option>VACANCIES</option>
+                </select>
+                <Input required name="order" type="number" placeholder="Order" />
+                <Input name="value" placeholder="Value / metric" />
+                <Input name="url" placeholder="Link URL" />
+                <Input required name="titleId" placeholder="Judul (ID)" />
+                <Input required name="titleEn" placeholder="Title (EN)" />
+                <Input name="descriptionId" placeholder="Deskripsi (ID)" />
+                <Input name="descriptionEn" placeholder="Description (EN)" />
+                <Input name="altId" placeholder="Alt gambar (ID)" />
+                <Input name="altEn" placeholder="Image alt (EN)" />
+              </div>
+              <Input
+                name="image"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+              />
             </>
           )}
           {section === "media" && (

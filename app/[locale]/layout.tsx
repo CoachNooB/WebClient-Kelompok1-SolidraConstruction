@@ -8,7 +8,7 @@ import {
   getFooter,
   getNavigation,
 } from "@/lib/repositories/public-content";
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: {

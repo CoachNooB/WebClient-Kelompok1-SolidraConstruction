@@ -7,7 +7,7 @@ describe("typed company settings", () => {
       companySettingsSchema.safeParse({
         name: "Solidra",
         email: "info@solidra.co.id",
-        phone: "+62 21 555 0142",
+        phone: "+62215550142",
         defaultLocale: "ID",
         socialLinks: { linkedin: "https://linkedin.com/company/solidra" },
         defaultSeo: { title: "Solidra", description: "Construction" },

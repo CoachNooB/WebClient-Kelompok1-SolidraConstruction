@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const file = form.get("file");
   if (!(file instanceof File))
     return NextResponse.json({ error: "File required" }, { status: 422 });
-  let uploaded: { path: string; publicUrl: string } | undefined;
+  let uploaded: { path: string } | undefined;
   try {
     uploaded = await uploadPublicAsset(file, "image");
     const media = await prisma.mediaAsset.create({
@@ -27,10 +27,7 @@ export async function POST(request: Request) {
       },
       select: { id: true },
     });
-    return NextResponse.json(
-      { ...media, publicUrl: uploaded.publicUrl },
-      { status: 201 },
-    );
+    return NextResponse.json(media, { status: 201 });
   } catch (error) {
     if (uploaded)
       await removePublicAsset(uploaded.path, "image").catch(() => undefined);

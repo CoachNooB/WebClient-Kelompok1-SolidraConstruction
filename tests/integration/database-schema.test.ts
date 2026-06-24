@@ -24,6 +24,8 @@ describeIntegration("database schema", () => {
       "page_revisions",
       "page_revision_translations",
       "page_sections",
+      "section_cards",
+      "section_card_translations",
       "investor_documents",
       "career_applications",
       "audit_logs",

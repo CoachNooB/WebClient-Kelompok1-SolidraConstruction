@@ -41,13 +41,13 @@ See `docs/deployment.md` for Redis, Supabase, PostgreSQL, Better Auth, and produ
 
 Create the PostgreSQL `solidra` schema and grant the migration/runtime role ownership or `USAGE, CREATE` before deployment. The committed migration creates all application tables, enums, indexes, and constraints in this schema; it creates no application tables in `public`.
 
-In Supabase Storage create these buckets:
+In Supabase Storage create these private buckets:
 
-- `solidra-public`: public CMS images.
-- `solidra-documents`: public investor PDFs.
-- `solidra-cvs`: private applicant files with no public read policy.
+- `solidra-public`: CMS images.
+- `solidra-documents`: investor PDFs.
+- `solidra-cvs`: applicant files.
 
-Only the server may receive `SUPABASE_SERVICE_ROLE_KEY`. Upstash credentials are also server-only. Submission APIs fail closed when Redis cannot verify rate limits; public reads bypass unavailable Redis and query PostgreSQL.
+Only the server may receive `SUPABASE_SERVICE_ROLE_KEY`. Storage object paths are saved in PostgreSQL, and public previews/downloads are served through server-generated signed Supabase URLs. Upstash credentials are also server-only. Submission APIs fail closed when Redis cannot verify rate limits; public reads bypass unavailable Redis and query PostgreSQL.
 
 Better Auth uses credential accounts with registration disabled. Seed the first `SUPER_ADMIN` using `SEED_ADMIN_EMAIL` and a password of at least 12 characters. Roles are `SUPER_ADMIN`, `EDITOR`, and `REVIEWER`; user administration is restricted to super administrators.
 
@@ -58,7 +58,7 @@ Better Auth uses credential accounts with registration disabled. Seed the first 
 3. Run `pnpm prisma:seed` once; repeated runs are safe.
 4. Run `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`.
 5. Verify PostgreSQL application objects exist only under `solidra` and physical identifiers are snake_case.
-6. Verify `solidra-cvs` is private, `/back-office` is disallowed in `robots.txt`, and service-role credentials are absent from client bundles.
+6. Verify all Supabase buckets are private, `/back-office` is disallowed in `robots.txt`, and service-role credentials are absent from client bundles.
 7. Run `NODE_ENV=production pnpm verify:production`.
 8. Smoke-test both locales, authentication, contact submission, vacancy application, publication, and authorized CV download.
 

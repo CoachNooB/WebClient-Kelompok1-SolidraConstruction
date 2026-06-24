@@ -20,7 +20,7 @@ export function SectionRenderer({
   section: SectionDto;
   locale: "id" | "en";
 }) {
-  const cards = items(section.config);
+  const cards = section.items?.length ? section.items : items(section.config);
   if (section.type === "HERO") return null;
   if (
     [

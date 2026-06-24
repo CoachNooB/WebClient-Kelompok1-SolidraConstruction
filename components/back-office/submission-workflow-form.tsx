@@ -33,7 +33,11 @@ export function SubmissionWorkflowForm({
     if (response.ok) router.refresh();
   }
   return (
-    <form onSubmit={submit} className="card mt-8 grid gap-4">
+    <form
+      onSubmit={submit}
+      data-read-only-allowed="true"
+      className="card mt-8 grid gap-4"
+    >
       <h2 className="text-xl font-bold">Workflow</h2>
       <label className="grid gap-2 font-semibold">
         Status

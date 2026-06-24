@@ -5,6 +5,7 @@ import { cached } from "@/lib/cache/server";
 import { cacheKeys } from "@/lib/cache/keys";
 import { getFallbackPage } from "@/lib/content/fallback-pages";
 import { time } from "@/lib/observability/timing";
+import { createPublicAssetDownloadUrl } from "@/lib/storage/supabase";
 import {
   defaultCompanySettings,
   type CompanySettings,
@@ -15,10 +16,21 @@ export type SectionDto = {
   type: string;
   order: number;
   config: unknown;
+  items?: CardItemDto[];
   heading: string | null;
   body: string | null;
   ctaLabel: string | null;
   ctaUrl: string | null;
+};
+export type CardItemDto = {
+  title?: string;
+  value?: string;
+  description?: string;
+  label?: string;
+  url?: string;
+  image?: string;
+  imageUrl?: string;
+  alt?: string;
 };
 export type PageDto = {
   key: string;
@@ -34,67 +46,152 @@ export async function getPublishedPage(
   key: string,
   locale: Locale,
 ): Promise<PageDto | null> {
-  return cached(cacheKeys.page(locale, key), 300, async () => {
-    const page = await time(`page:${locale}:${key}`, () =>
-      prisma.page.findFirst({
-        where: { key, status: "PUBLISHED", publishedRevisionId: { not: null } },
-        select: {
-          key: true,
-          slug: true,
-          publishedRevision: {
-            select: {
-              translations: {
-                where: { locale },
-                select: {
-                  title: true,
-                  description: true,
-                  seoTitle: true,
-                  seoDescription: true,
-                },
+  const page = await time(`page:${locale}:${key}`, () =>
+    prisma.page.findFirst({
+      where: { key, status: "PUBLISHED", publishedRevisionId: { not: null } },
+      select: {
+        key: true,
+        slug: true,
+        publishedRevision: {
+          select: {
+            translations: {
+              where: { locale },
+              select: {
+                title: true,
+                description: true,
+                seoTitle: true,
+                seoDescription: true,
               },
-              sections: {
-                where: { visible: true },
-                orderBy: { order: "asc" },
-                select: {
-                  id: true,
-                  type: true,
-                  order: true,
-                  config: true,
-                  translations: {
-                    where: { locale },
-                    select: {
-                      heading: true,
-                      body: true,
-                      ctaLabel: true,
-                      ctaUrl: true,
-                    },
+            },
+            sections: {
+              where: { visible: true },
+              orderBy: { order: "asc" },
+              select: {
+                id: true,
+                type: true,
+                order: true,
+                config: true,
+                translations: {
+                  where: { locale },
+                  select: {
+                    heading: true,
+                    body: true,
+                    ctaLabel: true,
+                    ctaUrl: true,
                   },
                 },
               },
             },
           },
         },
-      }),
-    );
-    const translation = page?.publishedRevision?.translations[0];
-    if (!page || !translation || !page.publishedRevision)
-      return getFallbackPage(key, locale);
-    return {
-      key: page.key,
-      slug: page.slug,
-      ...translation,
-      sections: page.publishedRevision.sections.map((section) => ({
-        id: section.id,
-        type: section.type,
-        order: section.order,
-        config: section.config,
-        heading: section.translations[0]?.heading ?? null,
-        body: section.translations[0]?.body ?? null,
-        ctaLabel: section.translations[0]?.ctaLabel ?? null,
-        ctaUrl: section.translations[0]?.ctaUrl ?? null,
-      })),
-    };
-  });
+      },
+    }),
+  );
+  const translation = page?.publishedRevision?.translations[0];
+  if (!page || !translation || !page.publishedRevision)
+    return getFallbackPage(key, locale);
+  const managedItems = await getManagedSectionItems(
+    page.publishedRevision.sections.map((section) => section.type),
+    key,
+    locale,
+  );
+  return {
+    key: page.key,
+    slug: page.slug,
+    ...translation,
+    sections: page.publishedRevision.sections.map((section) => ({
+      id: section.id,
+      type: section.type,
+      order: section.order,
+      config: section.config,
+      items: managedItems.get(section.type),
+      heading: section.translations[0]?.heading ?? null,
+      body: section.translations[0]?.body ?? null,
+      ctaLabel: section.translations[0]?.ctaLabel ?? null,
+      ctaUrl: section.translations[0]?.ctaUrl ?? null,
+    })),
+  };
+}
+
+const managedCardSectionTypes = [
+  "SERVICES",
+  "PROJECTS",
+  "TIMELINE",
+  "VALUES",
+  "LEADERSHIP",
+  "CERTIFICATIONS",
+  "FINANCIALS",
+  "GOVERNANCE",
+  "OFFICES",
+  "BENEFITS",
+  "PROCESS",
+  "VACANCIES",
+] as const;
+
+async function getManagedSectionItems(
+  sectionTypes: string[],
+  pageKey: string,
+  locale: Locale,
+) {
+  const result = new Map<string, CardItemDto[]>();
+  const cardTypes = managedCardSectionTypes.filter((type) =>
+    sectionTypes.includes(type),
+  );
+  if (cardTypes.length > 0) {
+    const cards = await prisma.sectionCard.findMany({
+      where: {
+        sectionType: { in: cardTypes },
+        status: "PUBLISHED",
+        publishedAt: { not: null },
+      },
+      orderBy: [{ sectionType: "asc" }, { order: "asc" }],
+      select: {
+        sectionType: true,
+        value: true,
+        url: true,
+        image: { select: { storagePath: true } },
+        translations: {
+          where: { locale },
+          select: { title: true, description: true, alt: true },
+        },
+      },
+    });
+    for (const card of cards) {
+      const translation = card.translations[0];
+      if (!translation) continue;
+      const items = result.get(card.sectionType) ?? [];
+      items.push({
+        title: translation.title,
+        value: card.value ?? undefined,
+        description: translation.description ?? undefined,
+        url: card.url ?? undefined,
+        image: card.image?.storagePath
+          ? await createPublicAssetDownloadUrl(card.image.storagePath, "image")
+          : undefined,
+        alt: translation.alt ?? translation.title,
+      });
+      result.set(card.sectionType, items);
+    }
+  }
+  if (pageKey === "investors" && sectionTypes.includes("DOCUMENTS")) {
+    const documents = await getInvestorDocuments(locale);
+    const items: CardItemDto[] = [];
+    for (const document of documents) {
+      const translation = document.translations[0];
+      if (!translation) continue;
+      items.push({
+        title: translation.title,
+        value: String(document.year),
+        description: translation.description ?? document.category,
+        url: await createPublicAssetDownloadUrl(
+          document.storagePath,
+          "document",
+        ),
+      });
+    }
+    result.set("DOCUMENTS", items);
+  }
+  return result;
 }
 
 export async function getVacancies(locale: Locale) {

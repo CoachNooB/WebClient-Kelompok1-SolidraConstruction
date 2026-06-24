@@ -40,22 +40,33 @@ export async function createCvDownloadUrl(path: string): Promise<string> {
 export async function uploadPublicAsset(
   file: File,
   kind: "image" | "document",
-): Promise<{ path: string; publicUrl: string }> {
+): Promise<{ path: string }> {
   const validated = await validateUpload(file, kind);
   const bucket =
     kind === "image"
       ? (process.env.SUPABASE_PUBLIC_BUCKET ?? "solidra-public")
       : (process.env.SUPABASE_DOCUMENT_BUCKET ?? "solidra-documents");
   const path = `${kind}s/${new Date().getUTCFullYear()}/${randomUUID()}.${validated.extension}`;
-  const connection = storage();
-  const { error } = await connection
+  const { error } = await storage()
     .from(bucket)
     .upload(path, file, { contentType: validated.mimeType, upsert: false });
   if (error) throw new Error("Asset upload failed");
-  return {
-    path,
-    publicUrl: connection.from(bucket).getPublicUrl(path).data.publicUrl,
-  };
+  return { path };
+}
+
+export async function createPublicAssetDownloadUrl(
+  path: string,
+  kind: "image" | "document",
+): Promise<string> {
+  const bucket =
+    kind === "image"
+      ? (process.env.SUPABASE_PUBLIC_BUCKET ?? "solidra-public")
+      : (process.env.SUPABASE_DOCUMENT_BUCKET ?? "solidra-documents");
+  const { data, error } = await storage()
+    .from(bucket)
+    .createSignedUrl(path, 600);
+  if (error) throw new Error("Unable to authorize asset download");
+  return data.signedUrl;
 }
 
 export async function removePublicAsset(

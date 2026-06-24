@@ -30,6 +30,9 @@ type Section = {
 
 const configurableSections = new Set([
   "METRICS",
+]);
+
+const managedCardSections = new Set([
   "SERVICES",
   "PROJECTS",
   "TIMELINE",
@@ -37,7 +40,6 @@ const configurableSections = new Set([
   "LEADERSHIP",
   "CERTIFICATIONS",
   "FINANCIALS",
-  "DOCUMENTS",
   "GOVERNANCE",
   "OFFICES",
   "BENEFITS",
@@ -45,12 +47,19 @@ const configurableSections = new Set([
   "VACANCIES",
 ]);
 
+const managedDocumentSections = new Set(["DOCUMENTS"]);
+
 function stringifyConfig(config: unknown) {
   if (config === null || config === undefined) return "";
   return JSON.stringify(config, null, 2);
 }
 
 function parseConfig(value: FormDataEntryValue | null, sectionType: string) {
+  if (
+    managedCardSections.has(sectionType) ||
+    managedDocumentSections.has(sectionType)
+  )
+    return undefined;
   if (!configurableSections.has(sectionType)) return undefined;
   const text = String(value ?? "").trim();
   if (!text) return undefined;
@@ -250,6 +259,18 @@ export function PageEditorForm({
                 })}
               </div>
 
+              {managedCardSections.has(section.type) && (
+                <div className="mt-4 rounded border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                  Manage cards in Section cards. This section will automatically
+                  show published cards matching {section.type}.
+                </div>
+              )}
+              {managedDocumentSections.has(section.type) && (
+                <div className="mt-4 rounded border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                  Manage documents in Investor documents. This section will
+                  automatically show published investor PDFs.
+                </div>
+              )}
               {configurableSections.has(section.type) && (
                 <label className="mt-4 grid gap-2">
                   Config JSON

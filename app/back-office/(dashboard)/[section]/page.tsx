@@ -1,26 +1,18 @@
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { DataTable } from "@/components/back-office/data-table";
 import { Pagination } from "@/components/back-office/pagination";
 import { ResourceCreatePanel } from "@/components/back-office/resource-create-panel";
 import { SettingsForm } from "@/components/back-office/settings-form";
 import { TableFilters } from "@/components/back-office/table-filters";
-import { auth } from "@/lib/auth";
+import {
+  getBackOfficeSessionOrRedirect,
+  redirectIfUnauthorized,
+} from "@/lib/auth/back-office";
+import { isBackOfficeSection } from "@/lib/auth/back-office-sections";
+import type { StaffRole } from "@/lib/auth/permissions";
 import { listBackOfficeRows } from "@/lib/repositories/back-office";
 import { getCompanySettings } from "@/lib/repositories/public-content";
 
-const sections = [
-  "pages",
-  "investor-documents",
-  "vacancies",
-  "applications",
-  "messages",
-  "media",
-  "navigation",
-  "footer",
-  "settings",
-  "users",
-];
 export const dynamic = "force-dynamic";
 export default async function Section({
   params,
@@ -30,10 +22,9 @@ export default async function Section({
   searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
   const { section } = await params;
-  if (!sections.includes(section)) notFound();
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) notFound();
-  if (section === "users" && session.user.role !== "SUPER_ADMIN") notFound();
+  if (!isBackOfficeSection(section)) notFound();
+  const session = await getBackOfficeSessionOrRedirect();
+  redirectIfUnauthorized(session.user.role as StaffRole, section);
   const title = section
     .split("-")
     .map((x) => x[0].toUpperCase() + x.slice(1))
@@ -59,6 +50,7 @@ export default async function Section({
     totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const hasDetail = [
     "pages",
+    "section-cards",
     "applications",
     "messages",
     "investor-documents",

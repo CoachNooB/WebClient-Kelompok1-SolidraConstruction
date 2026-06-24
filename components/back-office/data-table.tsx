@@ -38,7 +38,10 @@ export function DataTable({
               </td>
               <td className="p-4">
                 {row.href ? (
-                  <Link className="font-semibold text-blue-600" href={row.href}>
+                  <Link
+                    className="inline-flex min-h-10 items-center justify-center rounded-md border border-blue-200 bg-white px-3 text-sm font-semibold text-blue-700 shadow-sm hover:border-blue-300 hover:bg-blue-50 hover:shadow"
+                    href={row.href}
+                  >
                     View
                   </Link>
                 ) : (

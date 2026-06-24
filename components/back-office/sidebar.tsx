@@ -13,26 +13,37 @@ import {
   Users,
   X,
 } from "lucide-react";
+import {
+  type BackOfficeSection,
+  canAccessBackOfficeSection,
+} from "@/lib/auth/back-office-sections";
+import type { StaffRole } from "@/lib/auth/permissions";
 
 const items = [
-  ["", "Dashboard", LayoutDashboard],
-  ["pages", "Pages", FileText],
-  ["investor-documents", "Investor documents", FileText],
-  ["vacancies", "Vacancies", Briefcase],
-  ["applications", "Applications", Inbox],
-  ["messages", "Messages", Inbox],
-  ["media", "Media", ImageIcon],
-  ["navigation", "Navigation", FileText],
-  ["footer", "Footer", FileText],
-  ["settings", "Settings", Settings],
-  ["users", "Users", Users],
+  ["", "Dashboard", LayoutDashboard, null],
+  ["pages", "Pages", FileText, "pages"],
+  ["section-cards", "Section cards", FileText, "section-cards"],
+  ["investor-documents", "Investor documents", FileText, "investor-documents"],
+  ["vacancies", "Vacancies", Briefcase, "vacancies"],
+  ["applications", "Applications", Inbox, "applications"],
+  ["messages", "Messages", Inbox, "messages"],
+  ["media", "Media", ImageIcon, "media"],
+  ["navigation", "Navigation", FileText, "navigation"],
+  ["footer", "Footer", FileText, "footer"],
+  ["settings", "Settings", Settings, "settings"],
+  ["users", "Users", Users, "users"],
 ] as const;
-export function Sidebar() {
+export function Sidebar({ role }: { role: StaffRole }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const visibleItems = items.filter(([, , , section]) =>
+    section
+      ? canAccessBackOfficeSection(role, section as BackOfficeSection)
+      : true,
+  );
   const navigation = (
     <nav className="mt-8 grid gap-2">
-      {items.map(([href, label, Icon]) => {
+      {visibleItems.map(([href, label, Icon]) => {
         const target = `/back-office/${href}`.replace(/\/$/, "");
         const active =
           pathname === target ||

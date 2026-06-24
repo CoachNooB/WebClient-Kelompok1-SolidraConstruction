@@ -4,10 +4,21 @@ import { ArrowRight } from "lucide-react";
 import { PageHero } from "@/components/public/page-hero";
 import { SectionRenderer } from "@/components/public/section-renderer";
 import { isLocale } from "@/lib/i18n";
+import { pageMetadata } from "@/lib/metadata";
 import {
   getPublishedPage,
   getVacancies,
 } from "@/lib/repositories/public-content";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return pageMetadata("careers", locale);
+}
+
 export default async function Careers({
   params,
 }: {

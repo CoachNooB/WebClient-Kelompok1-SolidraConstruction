@@ -3,10 +3,21 @@ import { PageHero } from "@/components/public/page-hero";
 import { ContactForm } from "@/components/forms/contact-form";
 import { SectionRenderer } from "@/components/public/section-renderer";
 import { isLocale } from "@/lib/i18n";
+import { pageMetadata } from "@/lib/metadata";
 import {
   getOffices,
   getPublishedPage,
 } from "@/lib/repositories/public-content";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  return pageMetadata("contact", locale);
+}
+
 export default async function Contact({
   params,
 }: {

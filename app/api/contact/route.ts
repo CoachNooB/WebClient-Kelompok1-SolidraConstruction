@@ -41,7 +41,11 @@ export async function POST(request: Request) {
     if (!(await claimOnce("contact", parsed.data.idempotencyKey, 24 * 60 * 60)))
       return NextResponse.json({ ok: true }, { status: 200 });
     await createContactMessage({
-      ...parsed.data,
+      name: parsed.data.name,
+      email: parsed.data.email,
+      subject: parsed.data.subject,
+      message: parsed.data.message,
+      idempotencyKey: parsed.data.idempotencyKey,
       locale: parsed.data.locale.toUpperCase() as "ID" | "EN",
       phone: parsed.data.phone || undefined,
       company: parsed.data.company || undefined,

@@ -1,4 +1,10 @@
 import { z } from "zod";
+
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^[0-9+]+$/, "Phone can only contain numbers and +");
+
 const optionalHttpUrl = z
   .union([
     z.literal(""),
@@ -8,7 +14,7 @@ const optionalHttpUrl = z
 export const companySettingsSchema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.email(),
-  phone: z.string().trim().min(3).max(30),
+  phone: phoneSchema.pipe(z.string().min(3).max(30)),
   defaultLocale: z.enum(["ID", "EN"]),
   descriptionId: z.string().max(500).optional(),
   descriptionEn: z.string().max(500).optional(),

@@ -343,9 +343,43 @@ model MediaAsset {
   owner            User                  @relation(fields: [ownerId], references: [id])
   sections         PageSection[]
   projects         Project[]
+  sectionCards     SectionCard[]
   revisionSections PageSectionRevision[]
 
   @@map("media_assets")
+  @@schema("solidra")
+}
+
+model SectionCard {
+  id           String                   @id @default(cuid())
+  sectionType  SectionType              @map("section_type")
+  order        Int
+  value        String?
+  url          String?
+  imageId      String?                  @map("image_id")
+  status       ContentStatus            @default(DRAFT)
+  publishedAt  DateTime?                @map("published_at")
+  createdAt    DateTime                 @default(now()) @map("created_at")
+  updatedAt    DateTime                 @updatedAt @map("updated_at")
+  image        MediaAsset?              @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  translations SectionCardTranslation[]
+
+  @@index([sectionType, status, order], map: "section_cards_section_type_status_order_idx")
+  @@map("section_cards")
+  @@schema("solidra")
+}
+
+model SectionCardTranslation {
+  id          String      @id @default(cuid())
+  cardId      String      @map("card_id")
+  locale      Locale
+  title       String
+  description String?
+  alt         String?
+  card        SectionCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, locale], map: "section_card_translations_card_id_locale_key")
+  @@map("section_card_translations")
   @@schema("solidra")
 }
 

@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe("PageEditorForm", () => {
-  it("edits and saves section config JSON", async () => {
+  it("hides JSON config for managed card sections", async () => {
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response("{}", { status: 200 }));
@@ -73,24 +73,14 @@ describe("PageEditorForm", () => {
       />,
     );
 
-    const configInput = screen.getByLabelText(
-      "Config JSON",
-    ) as HTMLTextAreaElement;
-    expect(configInput.value).toContain("Existing Director");
+    expect(screen.queryByLabelText("Config JSON")).toBeNull();
+    expect(screen.getByText(/Manage cards in Section cards/i)).toBeTruthy();
 
-    fireEvent.change(configInput, {
-      target: {
-        value:
-          '{"items":[{"title":"Jane Santoso","description":"President Director"}]}',
-      },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     const [, request] = fetchMock.mock.calls[0];
     const payload = JSON.parse(String((request as RequestInit).body));
-    expect(payload.sections[0].config).toEqual({
-      items: [{ title: "Jane Santoso", description: "President Director" }],
-    });
+    expect(payload.sections[0].config).toBeUndefined();
   });
 });

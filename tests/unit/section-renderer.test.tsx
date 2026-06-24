@@ -6,6 +6,89 @@ import { SectionRenderer } from "@/components/public/section-renderer";
 afterEach(() => cleanup());
 
 describe("SectionRenderer", () => {
+  it("renders managed card items before legacy section config", () => {
+    render(
+      <SectionRenderer
+        locale="en"
+        section={{
+          id: "services",
+          type: "SERVICES",
+          order: 0,
+          heading: "Services",
+          body: null,
+          ctaLabel: null,
+          ctaUrl: null,
+          config: { items: [{ title: "Legacy service" }] },
+          items: [{ title: "Managed service", description: "From CMS form" }],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Managed service")).toBeTruthy();
+    expect(screen.queryByText("Legacy service")).toBeNull();
+  });
+
+  it("renders managed investor documents as signed links", () => {
+    render(
+      <SectionRenderer
+        locale="en"
+        section={{
+          id: "documents",
+          type: "DOCUMENTS",
+          order: 0,
+          heading: "Reports",
+          body: null,
+          ctaLabel: null,
+          ctaUrl: null,
+          config: null,
+          items: [
+            {
+              title: "Annual Report 2025",
+              value: "2025",
+              description: "Audited annual report",
+              url: "https://example.supabase.co/storage/v1/object/sign/solidra-documents/reports/annual-2025.pdf?token=signed",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Annual Report 2025")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Learn more" }).getAttribute("href"),
+    ).toBe(
+      "https://example.supabase.co/storage/v1/object/sign/solidra-documents/reports/annual-2025.pdf?token=signed",
+    );
+  });
+
+  it("can render private signed document links", () => {
+    render(
+      <SectionRenderer
+        locale="en"
+        section={{
+          id: "documents",
+          type: "DOCUMENTS",
+          order: 0,
+          heading: "Reports",
+          body: null,
+          ctaLabel: null,
+          ctaUrl: null,
+          config: null,
+          items: [
+            {
+              title: "Annual Report 2025",
+              url: "https://example.supabase.co/storage/v1/object/sign/solidra-documents/documents/2026/file.pdf?token=signed",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("link", { name: "Learn more" }).getAttribute("href"),
+    ).toContain("/storage/v1/object/sign/solidra-documents/");
+  });
+
   it("renders card images from section config", () => {
     render(
       <SectionRenderer

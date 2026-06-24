@@ -9,6 +9,14 @@ export function SettingsForm({ value }: { value: CompanySettings }) {
     text: string;
     tone: "success" | "error";
   } | null>(null);
+
+  function cleanPhone(event: React.FormEvent<HTMLInputElement>) {
+    event.currentTarget.value = event.currentTarget.value.replace(
+      /[^0-9+]/g,
+      "",
+    );
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -59,7 +67,15 @@ export function SettingsForm({ value }: { value: CompanySettings }) {
         </label>
         <label>
           Phone
-          <Input name="phone" defaultValue={value.phone} />
+          <Input
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            pattern="[0-9+]+"
+            maxLength={30}
+            defaultValue={value.phone}
+            onInput={cleanPhone}
+          />
         </label>
         <label>
           Default locale

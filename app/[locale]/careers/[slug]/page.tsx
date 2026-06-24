@@ -1,12 +1,37 @@
 import { notFound } from "next/navigation";
 import { ApplicationForm } from "@/components/forms/application-form";
 import { isLocale } from "@/lib/i18n";
+import { formatMetadataTitle } from "@/lib/metadata";
 import { getVacancyBySlug } from "@/lib/repositories/public-content";
 function list(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
 }
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}) {
+  const { locale, slug } = await params;
+  if (!isLocale(locale)) return {};
+  const vacancy = await getVacancyBySlug(
+    locale.toUpperCase() as "ID" | "EN",
+    slug,
+  );
+  const translation = vacancy?.translations[0];
+  if (!vacancy || !translation) return {};
+  return {
+    title: formatMetadataTitle(translation.title),
+    description: translation.summary,
+    openGraph: {
+      title: formatMetadataTitle(translation.title),
+      description: translation.summary,
+    },
+  };
+}
+
 export default async function Vacancy({
   params,
 }: {

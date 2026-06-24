@@ -4,7 +4,19 @@ import { readFile } from "node:fs/promises";
 import { cacheKey } from "@/lib/cache/keys";
 import { parseEnvironment } from "@/lib/env";
 
-const expectedTables = ["users", "sessions", "pages", "page_revisions", "page_revision_translations", "page_sections", "investor_documents", "career_applications", "audit_logs"];
+const expectedTables = [
+  "users",
+  "sessions",
+  "pages",
+  "page_revisions",
+  "page_revision_translations",
+  "page_sections",
+  "section_cards",
+  "section_card_translations",
+  "investor_documents",
+  "career_applications",
+  "audit_logs",
+];
 
 async function main() {
   const env = parseEnvironment(process.env);

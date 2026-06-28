@@ -8,6 +8,25 @@ describe("parseEnvironment", () => {
     ).toBe(false);
   });
 
+  it("keeps Vercel previews integration-free despite production NODE_ENV", () => {
+    expect(
+      parseEnvironment({
+        NODE_ENV: "production",
+        VERCEL_ENV: "preview",
+      }),
+    ).toEqual({ integrationsEnabled: false });
+  });
+
+  it("requires a direct migration URL in Vercel production", () => {
+    expect(() =>
+      parseEnvironment({
+        NODE_ENV: "production",
+        VERCEL_ENV: "production",
+        DATABASE_URL: "postgresql://user:pass@pooler:6543/solidra",
+      }),
+    ).toThrow(/DIRECT_DATABASE_URL/);
+  });
+
   it("requires every production integration credential", () => {
     expect(() => parseEnvironment({ NODE_ENV: "production" })).toThrow(
       /DATABASE_URL/,
@@ -17,7 +36,9 @@ describe("parseEnvironment", () => {
   it("accepts complete production credentials", () => {
     const result = parseEnvironment({
       NODE_ENV: "production",
+      VERCEL_ENV: "production",
       DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
+      DIRECT_DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
       BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
       BETTER_AUTH_URL: "https://solidra.example.com",
       NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
@@ -34,7 +55,9 @@ describe("parseEnvironment", () => {
     expect(() =>
       parseEnvironment({
         NODE_ENV: "production",
+        VERCEL_ENV: "production",
         DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
+        DIRECT_DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
         BETTER_AUTH_SECRET: "short",
         BETTER_AUTH_URL: "https://solidra.example.com",
         NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
@@ -50,7 +73,9 @@ describe("parseEnvironment", () => {
     expect(() =>
       parseEnvironment({
         NODE_ENV: "production",
+        VERCEL_ENV: "production",
         DATABASE_URL: "mysql://user:pass@localhost:3306/solidra",
+        DIRECT_DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
         BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
         BETTER_AUTH_URL: "https://solidra.example.com",
         NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
@@ -66,7 +91,9 @@ describe("parseEnvironment", () => {
     expect(() =>
       parseEnvironment({
         NODE_ENV: "production",
+        VERCEL_ENV: "production",
         DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
+        DIRECT_DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
         BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
         BETTER_AUTH_URL: "https://solidra.example.com",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
@@ -81,7 +108,9 @@ describe("parseEnvironment", () => {
     expect(() =>
       parseEnvironment({
         NODE_ENV: "production",
+        VERCEL_ENV: "production",
         DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
+        DIRECT_DATABASE_URL: "postgresql://user:pass@localhost:5432/solidra",
         BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
         BETTER_AUTH_URL: "http://solidra.example.com",
         NEXT_PUBLIC_SITE_URL: "http://solidra.example.com",

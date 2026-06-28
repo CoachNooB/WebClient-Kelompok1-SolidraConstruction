@@ -11,6 +11,7 @@ const httpsUrl = z.url().refine((value) => {
 const productionEnvironment = z.object({
   NODE_ENV: z.literal("production"),
   DATABASE_URL: z.url().startsWith("postgresql://"),
+  DIRECT_DATABASE_URL: z.url().startsWith("postgresql://"),
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: httpsUrl,
   NEXT_PUBLIC_SITE_URL: httpsUrl,
@@ -23,7 +24,11 @@ const productionEnvironment = z.object({
 export type Environment = Record<string, string | undefined>;
 
 export function parseEnvironment(environment: Environment) {
-  if (environment.NODE_ENV !== "production") {
+  if (
+    environment.NODE_ENV !== "production" ||
+    environment.VERCEL_ENV === "preview" ||
+    environment.VERCEL_ENV === "development"
+  ) {
     return { integrationsEnabled: false as const };
   }
 

@@ -1,24 +1,25 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { removePublicAsset, uploadPublicAsset } from "@/lib/storage/supabase";
+import { removePublicAsset } from "@/lib/storage/supabase";
 
 export async function replaceInvestorDocumentFile(args: {
   id: string;
   actorId: string;
-  file: File;
+  path: string;
+  mimeType: string;
+  size: number;
 }): Promise<{ id: string }> {
   const current = await prisma.investorDocument.findUniqueOrThrow({
     where: { id: args.id },
   });
-  const uploaded = await uploadPublicAsset(args.file, "document");
   try {
     await prisma.$transaction(async (tx) => {
       await tx.investorDocument.update({
         where: { id: args.id },
         data: {
-          storagePath: uploaded.path,
-          mimeType: args.file.type,
-          size: args.file.size,
+          storagePath: args.path,
+          mimeType: args.mimeType,
+          size: args.size,
           status: "DRAFT",
           publishedAt: null,
         },
@@ -33,7 +34,7 @@ export async function replaceInvestorDocumentFile(args: {
       });
     });
   } catch (error) {
-    await removePublicAsset(uploaded.path, "document").catch(() => undefined);
+    await removePublicAsset(args.path, "document").catch(() => undefined);
     throw error;
   }
   try {

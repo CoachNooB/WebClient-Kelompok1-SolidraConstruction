@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { publicPagePaths } from "@/lib/cache/revalidation";
+import {
+  publicManagedContentPaths,
+  publicPagePaths,
+} from "@/lib/cache/revalidation";
 
 describe("public page cache revalidation", () => {
   it("maps the home page to locale roots", () => {
@@ -8,5 +11,20 @@ describe("public page cache revalidation", () => {
 
   it("maps content pages to localized slugs", () => {
     expect(publicPagePaths("about")).toEqual(["/id/about", "/en/about"]);
+  });
+
+  it("maps shared managed content to every localized public page", () => {
+    expect(publicManagedContentPaths()).toEqual([
+      "/id",
+      "/en",
+      "/id/about",
+      "/en/about",
+      "/id/investors",
+      "/en/investors",
+      "/id/contact",
+      "/en/contact",
+      "/id/careers",
+      "/en/careers",
+    ]);
   });
 });

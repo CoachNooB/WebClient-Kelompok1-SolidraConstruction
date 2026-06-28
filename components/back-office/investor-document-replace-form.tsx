@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ToastMessage } from "@/components/back-office/toast";
+import { directUpload } from "@/lib/storage/direct-upload-client";
 
 export function InvestorDocumentReplaceForm({ id }: { id: string }) {
   const router = useRouter();
@@ -13,10 +14,31 @@ export function InvestorDocumentReplaceForm({ id }: { id: string }) {
   } | null>(null);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const response = await fetch(
-      `/api/back-office/investor-documents/${id}/replace`,
-      { method: "POST", body: new FormData(event.currentTarget) },
-    );
+    const form = new FormData(event.currentTarget);
+    const file = form.get("file");
+    let response: Response;
+    try {
+      if (!(file instanceof File)) throw new Error("PDF file required");
+      const upload = await directUpload(
+        file,
+        "investor-document-replace",
+        id,
+      );
+      response = await fetch(
+        `/api/back-office/investor-documents/${id}/replace`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ upload }),
+        },
+      );
+    } catch (error) {
+      setMessage({
+        text: error instanceof Error ? error.message : "Upload failed",
+        tone: "error",
+      });
+      return;
+    }
     const body = await response.json();
     setMessage(
       response.ok

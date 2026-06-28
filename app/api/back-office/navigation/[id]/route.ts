@@ -1,5 +1,7 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
+import { publicManagedContentPaths } from "@/lib/cache/revalidation";
 import { updateNavigationItem } from "@/lib/repositories/navigation-editor";
 import { assertSameOrigin } from "@/lib/security/csrf";
 import { navigationEditorSchema } from "@/lib/validation/navigation";
@@ -22,5 +24,6 @@ export async function PATCH(
       { status: 422 },
     );
   await updateNavigationItem((await params).id, session.user.id, parsed.data);
+  for (const path of publicManagedContentPaths()) revalidatePath(path);
   return NextResponse.json({ ok: true });
 }

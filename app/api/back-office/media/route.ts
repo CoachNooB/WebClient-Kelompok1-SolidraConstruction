@@ -2,33 +2,44 @@ import { NextResponse } from "next/server";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { prisma } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/security/csrf";
-import {
-  assertContentLength,
-  uploadRequestLimits,
-} from "@/lib/security/request-size";
-import { removePublicAsset, uploadPublicAsset } from "@/lib/storage/supabase";
+import { removePublicAsset } from "@/lib/storage/supabase";
+import { completeDirectUpload } from "@/lib/storage/complete-upload";
+import { z } from "zod";
+
+const schema = z.object({
+  altId: z.string().trim().min(1).max(500),
+  altEn: z.string().trim().min(1).max(500),
+  upload: z.object({
+    ticket: z.string().min(1),
+    path: z.string().min(1),
+    fileName: z.string().min(1).max(255),
+  }),
+});
 export async function POST(request: Request) {
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const session = await requireBackOfficePermission("content:write");
   if (isAuthResponse(session)) return session;
-  const tooLarge = assertContentLength(request, uploadRequestLimits.image);
-  if (tooLarge) return tooLarge;
-  const form = await request.formData();
-  const file = form.get("file");
-  if (!(file instanceof File))
-    return NextResponse.json({ error: "File required" }, { status: 422 });
-  let uploaded: { path: string } | undefined;
+  const parsed = schema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success)
+    return NextResponse.json({ error: "Invalid media" }, { status: 422 });
+  let uploaded:
+    | { path: string; mimeType: string; size: number }
+    | undefined;
   try {
-    uploaded = await uploadPublicAsset(file, "image");
+    uploaded = await completeDirectUpload({
+      ...parsed.data.upload,
+      purpose: "media-create",
+      subject: session.user.id,
+    });
     const media = await prisma.mediaAsset.create({
       data: {
         storagePath: uploaded.path,
-        fileName: file.name,
-        mimeType: file.type,
-        size: file.size,
-        altId: String(form.get("altId") ?? ""),
-        altEn: String(form.get("altEn") ?? ""),
+        fileName: parsed.data.upload.fileName,
+        mimeType: uploaded.mimeType,
+        size: uploaded.size,
+        altId: parsed.data.altId,
+        altEn: parsed.data.altEn,
         ownerId: session.user.id,
       },
       select: { id: true },

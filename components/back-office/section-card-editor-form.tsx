@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToastMessage } from "@/components/back-office/toast";
 import { managedCardSectionTypes } from "@/lib/validation/section-card";
+import { directUpload } from "@/lib/storage/direct-upload-client";
 
 type Translation = {
   locale: "ID" | "EN";
@@ -37,10 +38,29 @@ export function SectionCardEditorForm({
     event.preventDefault();
     setPending(true);
     setMessage(null);
-    const response = await fetch(`/api/back-office/section-cards/${card.id}`, {
-      method: "PATCH",
-      body: new FormData(event.currentTarget),
-    });
+    const form = new FormData(event.currentTarget);
+    const image = form.get("image");
+    let response: Response;
+    try {
+      const upload =
+        image instanceof File && image.size > 0
+          ? await directUpload(image, "section-card-update", card.id)
+          : undefined;
+      const value = Object.fromEntries(form);
+      delete value.image;
+      response = await fetch(`/api/back-office/section-cards/${card.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...value, upload }),
+      });
+    } catch (error) {
+      setPending(false);
+      setMessage({
+        text: error instanceof Error ? error.message : "Upload failed",
+        tone: "error",
+      });
+      return;
+    }
     setPending(false);
     setMessage(
       response.ok

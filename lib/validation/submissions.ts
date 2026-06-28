@@ -40,7 +40,7 @@ const cvSchema = z
     "CV must be PDF, DOC, or DOCX",
   );
 
-export const applicationSchema = z.object({
+export const applicationMetadataSchema = z.object({
   locale: z.enum(["id", "en"]),
   idempotencyKey: z.uuid(),
   name: z.string().trim().min(2).max(100),
@@ -48,5 +48,8 @@ export const applicationSchema = z.object({
   phone: phoneSchema.pipe(z.string().min(8).max(30)),
   coverLetter: z.string().trim().min(20).max(5000),
   consent: z.literal(true),
+});
+
+export const applicationSchema = applicationMetadataSchema.extend({
   cv: cvSchema,
 });

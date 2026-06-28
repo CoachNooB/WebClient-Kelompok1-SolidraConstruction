@@ -1,5 +1,7 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
+import { publicManagedContentPaths } from "@/lib/cache/revalidation";
 import { prisma } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/security/csrf";
 import { companySettingsSchema } from "@/lib/settings/schema";
@@ -32,5 +34,6 @@ export async function PUT(request: Request) {
     }),
   ]);
   await invalidate([cacheKeys.settings()]);
+  for (const path of publicManagedContentPaths()) revalidatePath(path);
   return NextResponse.json({ ok: true });
 }

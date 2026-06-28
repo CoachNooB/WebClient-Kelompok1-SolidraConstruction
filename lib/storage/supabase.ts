@@ -39,6 +39,8 @@ export async function validateDirectUpload(args: {
   path: string;
   kind: UploadKind;
   fileName: string;
+  expectedMimeType?: string;
+  expectedSize?: number;
 }): Promise<{ path: string; mimeType: string; size: number }> {
   if (args.bucket !== bucketFor(args.kind))
     throw new Error("Upload bucket mismatch");
@@ -46,10 +48,16 @@ export async function validateDirectUpload(args: {
   const { data, error } = await container.download(args.path);
   if (error || !data) throw new Error("Uploaded file not found");
   const file = new File([data], args.fileName, {
-    type: data.type || "application/octet-stream",
+    type: (args.expectedMimeType ?? data.type) || "application/octet-stream",
   });
   try {
     const validated = await validateUpload(file, args.kind);
+    if (
+      (args.expectedMimeType &&
+        validated.mimeType !== args.expectedMimeType) ||
+      (args.expectedSize !== undefined && validated.size !== args.expectedSize)
+    )
+      throw new Error("Uploaded file does not match ticket");
     const finalPath = `${args.kind}s/${new Date().getUTCFullYear()}/${randomUUID()}.${validated.extension}`;
     const { error: moveError } = await container.move(args.path, finalPath);
     if (moveError) throw new Error("Unable to finalize upload");

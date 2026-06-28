@@ -1,16 +1,26 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
+import { publicManagedContentPaths } from "@/lib/cache/revalidation";
 import { prisma } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/security/csrf";
-import {
-  assertContentLength,
-  uploadRequestLimits,
-} from "@/lib/security/request-size";
-import { removePublicAsset, uploadPublicAsset } from "@/lib/storage/supabase";
+import { removePublicAsset } from "@/lib/storage/supabase";
+import { completeDirectUpload } from "@/lib/storage/complete-upload";
 import {
   sectionCardMetadataSchema,
   sectionCardStatusSchema,
 } from "@/lib/validation/section-card";
+import { z } from "zod";
+
+const editSchema = sectionCardMetadataSchema.extend({
+  upload: z
+    .object({
+      ticket: z.string().min(1),
+      path: z.string().min(1),
+      fileName: z.string().min(1).max(255),
+    })
+    .optional(),
+});
 
 export async function PATCH(
   request: Request,
@@ -19,12 +29,15 @@ export async function PATCH(
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const { id } = await params;
-  const contentType = request.headers.get("content-type") ?? "";
-
-  if (contentType.includes("application/json")) {
+  const body = await request.json().catch(() => null);
+  if (
+    body &&
+    typeof body === "object" &&
+    "status" in body
+  ) {
     const session = await requireBackOfficePermission("content:publish");
     if (isAuthResponse(session)) return session;
-    const parsed = sectionCardStatusSchema.safeParse(await request.json());
+    const parsed = sectionCardStatusSchema.safeParse(body);
     if (!parsed.success)
       return NextResponse.json({ error: "Invalid status" }, { status: 422 });
     await prisma.$transaction([
@@ -45,35 +58,35 @@ export async function PATCH(
         },
       }),
     ]);
+    for (const path of publicManagedContentPaths()) revalidatePath(path);
     return NextResponse.json({ ok: true });
   }
 
   const session = await requireBackOfficePermission("content:write");
   if (isAuthResponse(session)) return session;
-  const tooLarge = assertContentLength(request, uploadRequestLimits.sectionCard);
-  if (tooLarge) return tooLarge;
-  const form = await request.formData();
-  const parsed = sectionCardMetadataSchema.safeParse(
-    Object.fromEntries(form),
-  );
+  const parsed = editSchema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json(
       { error: "Invalid card", fields: parsed.error.flatten().fieldErrors },
       { status: 422 },
     );
 
-  const file = form.get("image");
   let uploaded: { path: string } | undefined;
   try {
     let imageId: string | undefined;
-    if (file instanceof File && file.size > 0) {
-      uploaded = await uploadPublicAsset(file, "image");
+    if (parsed.data.upload) {
+      const completed = await completeDirectUpload({
+        ...parsed.data.upload,
+        purpose: "section-card-update",
+        subject: id,
+      });
+      uploaded = completed;
       const media = await prisma.mediaAsset.create({
         data: {
-          storagePath: uploaded.path,
-          fileName: file.name,
-          mimeType: file.type,
-          size: file.size,
+          storagePath: completed.path,
+          fileName: parsed.data.upload.fileName,
+          mimeType: completed.mimeType,
+          size: completed.size,
           altId: parsed.data.altId || parsed.data.titleId,
           altEn: parsed.data.altEn || parsed.data.titleEn,
           ownerId: session.user.id,
@@ -122,6 +135,7 @@ export async function PATCH(
         },
       });
     });
+    for (const path of publicManagedContentPaths()) revalidatePath(path);
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (uploaded)

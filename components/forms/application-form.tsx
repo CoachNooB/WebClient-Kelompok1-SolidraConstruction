@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { directUpload } from "@/lib/storage/direct-upload-client";
 
 type Toast = {
   tone: "success" | "error";
@@ -29,10 +30,34 @@ export function ApplicationForm({
     setPending(true);
     setToast(null);
     const form = e.currentTarget;
-    const res = await fetch(`/api/careers/${vacancyId}/apply`, {
-      method: "POST",
-      body: new FormData(form),
-    });
+    const values = new FormData(form);
+    const cv = values.get("cv");
+    let res: Response;
+    try {
+      if (!(cv instanceof File)) throw new Error("CV file required");
+      const upload = await directUpload(cv, "career-application", vacancyId);
+      res = await fetch(`/api/careers/${vacancyId}/apply`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          locale: values.get("locale"),
+          idempotencyKey: values.get("idempotencyKey"),
+          name: values.get("name"),
+          email: values.get("email"),
+          phone: values.get("phone"),
+          coverLetter: values.get("coverLetter"),
+          consent: values.get("consent") === "true",
+          upload,
+        }),
+      });
+    } catch (error) {
+      setPending(false);
+      setToast({
+        tone: "error",
+        text: error instanceof Error ? error.message : "File upload failed",
+      });
+      return;
+    }
     setPending(false);
     if (res.ok) {
       form.reset();

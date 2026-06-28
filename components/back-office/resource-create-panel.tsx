@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { directUpload } from "@/lib/storage/direct-upload-client";
 
 type ApiError = { error?: string };
 
@@ -35,6 +36,45 @@ export function ResourceCreatePanel({ section }: { section: string }) {
     const endpoint = `/api/back-office/${section}`;
     let body: BodyInit = form,
       headers: HeadersInit | undefined;
+
+    if (section === "media" || section === "investor-documents") {
+      const file = form.get("file");
+      try {
+        if (!(file instanceof File)) throw new Error("File required");
+        const upload = await directUpload(
+          file,
+          section === "media"
+            ? "media-create"
+            : "investor-document-create",
+        );
+        const value = Object.fromEntries(form);
+        delete value.file;
+        body = JSON.stringify({ ...value, upload });
+        headers = { "content-type": "application/json" };
+      } catch (error) {
+        setPending(false);
+        setMessage(error instanceof Error ? error.message : "Upload failed");
+        return;
+      }
+    }
+
+    if (section === "section-cards") {
+      const file = form.get("image");
+      try {
+        const upload =
+          file instanceof File && file.size > 0
+            ? await directUpload(file, "section-card-create")
+            : undefined;
+        const value = Object.fromEntries(form);
+        delete value.image;
+        body = JSON.stringify({ ...value, upload });
+        headers = { "content-type": "application/json" };
+      } catch (error) {
+        setPending(false);
+        setMessage(error instanceof Error ? error.message : "Upload failed");
+        return;
+      }
+    }
 
     if (section === "users") {
       body = JSON.stringify(Object.fromEntries(form));

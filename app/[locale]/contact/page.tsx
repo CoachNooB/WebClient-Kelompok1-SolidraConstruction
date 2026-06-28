@@ -32,6 +32,9 @@ export default async function Contact({
   ]);
   if (!page) notFound();
   const hero = page.sections.find((s) => s.type === "HERO");
+  const hasOfficeCards = page.sections.some(
+    (section) => section.type === "OFFICES" && section.items?.length,
+  );
   return (
     <>
       <PageHero
@@ -40,31 +43,43 @@ export default async function Contact({
         description={hero?.body ?? page.description}
       />
       {page.sections
-        .filter((s) => !["HERO", "CONTACT_FORM", "OFFICES"].includes(s.type))
+        .filter(
+          (s) =>
+            !["HERO", "CONTACT_FORM"].includes(s.type) &&
+            (s.type !== "OFFICES" || Boolean(s.items?.length)),
+        )
         .map((s) => (
           <SectionRenderer key={s.id} section={s} locale={locale} />
         ))}
       <section className="section">
-        <div className="container grid gap-12 md:grid-cols-[.8fr_1.2fr]">
-          <div>
-            {offices.map((office) => (
-              <article className="mb-8" key={office.id}>
-                <h2 className="text-2xl font-bold">
-                  {office.translations[0]?.name ?? office.city}
-                </h2>
-                <p className="mt-4 leading-8 text-slate-600">
-                  {office.address}
-                  <br />
-                  {office.city}
-                </p>
-                <p className="mt-4">
-                  {office.email}
-                  <br />
-                  {office.phone}
-                </p>
-              </article>
-            ))}
-          </div>
+        <div
+          className={
+            hasOfficeCards
+              ? "container max-w-3xl"
+              : "container grid gap-12 md:grid-cols-[.8fr_1.2fr]"
+          }
+        >
+          {!hasOfficeCards && (
+            <div>
+              {offices.map((office) => (
+                <article className="mb-8" key={office.id}>
+                  <h2 className="text-2xl font-bold">
+                    {office.translations[0]?.name ?? office.city}
+                  </h2>
+                  <p className="mt-4 leading-8 text-slate-600">
+                    {office.address}
+                    <br />
+                    {office.city}
+                  </p>
+                  <p className="mt-4">
+                    {office.email}
+                    <br />
+                    {office.phone}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
           <div>
             <ContactForm locale={locale} />
             <p className="mt-4 text-xs text-slate-500">

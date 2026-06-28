@@ -4,25 +4,24 @@ import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { publicInvestorPaths } from "@/lib/cache/revalidation";
 import { prisma } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/security/csrf";
-import {
-  assertContentLength,
-  uploadRequestLimits,
-} from "@/lib/security/request-size";
-import { removePublicAsset, uploadPublicAsset } from "@/lib/storage/supabase";
+import { removePublicAsset } from "@/lib/storage/supabase";
+import { completeDirectUpload } from "@/lib/storage/complete-upload";
 import { investorDocumentMetadataSchema } from "@/lib/validation/investor-document";
+import { z } from "zod";
+const schema = investorDocumentMetadataSchema.extend({
+  upload: z.object({
+    ticket: z.string().min(1),
+    path: z.string().min(1),
+    fileName: z.string().min(1).max(255),
+  }),
+});
 export async function POST(request: Request) {
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
   const session = await requireBackOfficePermission("content:write");
   if (isAuthResponse(session)) return session;
-  const tooLarge = assertContentLength(request, uploadRequestLimits.document);
-  if (tooLarge) return tooLarge;
-  const form = await request.formData();
-  const parsed = investorDocumentMetadataSchema.safeParse(
-    Object.fromEntries(form),
-  );
-  const file = form.get("file");
-  if (!parsed.success || !(file instanceof File))
+  const parsed = schema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success)
     return NextResponse.json(
       {
         error: "Invalid document",
@@ -32,7 +31,11 @@ export async function POST(request: Request) {
     );
   let uploaded: { path: string } | undefined;
   try {
-    const stored = await uploadPublicAsset(file, "document");
+    const stored = await completeDirectUpload({
+      ...parsed.data.upload,
+      purpose: "investor-document-create",
+      subject: session.user.id,
+    });
     uploaded = stored;
     const document = await prisma.$transaction(async (tx) => {
       const created = await tx.investorDocument.create({
@@ -40,8 +43,8 @@ export async function POST(request: Request) {
           storagePath: stored.path,
           year: parsed.data.year,
           category: parsed.data.category,
-          mimeType: file.type,
-          size: file.size,
+          mimeType: stored.mimeType,
+          size: stored.size,
           translations: {
             create: [
               {

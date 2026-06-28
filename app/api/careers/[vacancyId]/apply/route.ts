@@ -1,17 +1,23 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { applicationSchema } from "@/lib/validation/submissions";
+import { applicationMetadataSchema } from "@/lib/validation/submissions";
 import {
   createCareerApplication,
   getEligibleVacancy,
 } from "@/lib/repositories/submissions";
 import { claimOnce, enforceRateLimit, releaseClaim } from "@/lib/redis";
 import { getClientIp } from "@/lib/security/client-ip";
-import {
-  assertContentLength,
-  uploadRequestLimits,
-} from "@/lib/security/request-size";
-import { removeCv, uploadCv } from "@/lib/storage/supabase";
+import { removeCv } from "@/lib/storage/supabase";
+import { completeDirectUpload } from "@/lib/storage/complete-upload";
+import { z } from "zod";
+
+const requestSchema = applicationMetadataSchema.extend({
+  upload: z.object({
+    ticket: z.string().min(1),
+    path: z.string().min(1),
+    fileName: z.string().min(1).max(255),
+  }),
+});
 
 function fingerprint(vacancyId: string, email: string) {
   return createHash("sha256")
@@ -24,19 +30,7 @@ export async function POST(
   { params }: { params: Promise<{ vacancyId: string }> },
 ) {
   const { vacancyId } = await params;
-  const tooLarge = assertContentLength(request, uploadRequestLimits.cv);
-  if (tooLarge) return tooLarge;
-  const form = await request.formData();
-  const parsed = applicationSchema.safeParse({
-    locale: form.get("locale"),
-    idempotencyKey: form.get("idempotencyKey"),
-    name: form.get("name"),
-    email: form.get("email"),
-    phone: form.get("phone"),
-    coverLetter: form.get("coverLetter"),
-    consent: form.get("consent") === "true",
-    cv: form.get("cv"),
-  });
+  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
     return NextResponse.json(
       {
@@ -70,7 +64,12 @@ export async function POST(
         { error: "Application already submitted" },
         { status: 409 },
       );
-    cvPath = await uploadCv(parsed.data.cv);
+    const completed = await completeDirectUpload({
+      ...parsed.data.upload,
+      purpose: "career-application",
+      subject: vacancyId,
+    });
+    cvPath = completed.path;
     await createCareerApplication({
       vacancyId,
       name: parsed.data.name,

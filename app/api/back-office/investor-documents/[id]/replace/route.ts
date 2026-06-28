@@ -4,11 +4,16 @@ import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
 import { publicInvestorPaths } from "@/lib/cache/revalidation";
 import { replaceInvestorDocumentFile } from "@/lib/repositories/investor-document-editor";
 import { assertSameOrigin } from "@/lib/security/csrf";
-import {
-  assertContentLength,
-  uploadRequestLimits,
-} from "@/lib/security/request-size";
-import { investorDocumentReplaceSchema } from "@/lib/validation/investor-document";
+import { completeDirectUpload } from "@/lib/storage/complete-upload";
+import { z } from "zod";
+
+const schema = z.object({
+  upload: z.object({
+    ticket: z.string().min(1),
+    path: z.string().min(1),
+    fileName: z.string().min(1).max(255),
+  }),
+});
 
 export async function POST(
   request: Request,
@@ -18,12 +23,7 @@ export async function POST(
   if (csrf) return csrf;
   const session = await requireBackOfficePermission("content:write");
   if (isAuthResponse(session)) return session;
-  const tooLarge = assertContentLength(request, uploadRequestLimits.document);
-  if (tooLarge) return tooLarge;
-  const form = await request.formData();
-  const parsed = investorDocumentReplaceSchema.safeParse({
-    file: form.get("file"),
-  });
+  const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success)
     return NextResponse.json(
       {
@@ -32,10 +32,16 @@ export async function POST(
       },
       { status: 422 },
     );
+  const id = (await params).id;
+  const uploaded = await completeDirectUpload({
+    ...parsed.data.upload,
+    purpose: "investor-document-replace",
+    subject: id,
+  });
   const result = await replaceInvestorDocumentFile({
-    id: (await params).id,
+    id,
     actorId: session.user.id,
-    file: parsed.data.file,
+    ...uploaded,
   });
   for (const path of publicInvestorPaths()) revalidatePath(path);
   return NextResponse.json(result);

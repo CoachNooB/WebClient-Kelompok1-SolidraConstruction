@@ -16,9 +16,11 @@ const productionEnvironment = z.object({
   BETTER_AUTH_URL: httpsUrl,
   NEXT_PUBLIC_SITE_URL: httpsUrl,
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   UPSTASH_REDIS_REST_URL: z.url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
+  CRON_SECRET: z.string().min(32),
 });
 
 export type Environment = Record<string, string | undefined>;

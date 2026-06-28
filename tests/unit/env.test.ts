@@ -43,9 +43,11 @@ describe("parseEnvironment", () => {
       BETTER_AUTH_URL: "https://solidra.example.com",
       NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
       SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
       UPSTASH_REDIS_REST_URL: "https://redis.example.com",
       UPSTASH_REDIS_REST_TOKEN: "redis-token",
+      CRON_SECRET: "a-secure-cron-secret-with-32-characters",
     });
 
     expect(result.integrationsEnabled).toBe(true);
@@ -62,9 +64,11 @@ describe("parseEnvironment", () => {
         BETTER_AUTH_URL: "https://solidra.example.com",
         NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
         SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
         UPSTASH_REDIS_REST_URL: "https://redis.example.com",
         UPSTASH_REDIS_REST_TOKEN: "redis-token",
+        CRON_SECRET: "a-secure-cron-secret-with-32-characters",
       }),
     ).toThrow(/BETTER_AUTH_SECRET/);
   });
@@ -80,9 +84,11 @@ describe("parseEnvironment", () => {
         BETTER_AUTH_URL: "https://solidra.example.com",
         NEXT_PUBLIC_SITE_URL: "https://solidra.example.com",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
         SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
         UPSTASH_REDIS_REST_URL: "https://redis.example.com",
         UPSTASH_REDIS_REST_TOKEN: "redis-token",
+        CRON_SECRET: "a-secure-cron-secret-with-32-characters",
       }),
     ).toThrow(/DATABASE_URL/);
   });
@@ -97,9 +103,11 @@ describe("parseEnvironment", () => {
         BETTER_AUTH_SECRET: "a-secure-secret-with-at-least-32-characters",
         BETTER_AUTH_URL: "https://solidra.example.com",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
         SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
         UPSTASH_REDIS_REST_URL: "https://redis.example.com",
         UPSTASH_REDIS_REST_TOKEN: "redis-token",
+        CRON_SECRET: "a-secure-cron-secret-with-32-characters",
       }),
     ).toThrow(/NEXT_PUBLIC_SITE_URL/);
   });
@@ -115,9 +123,11 @@ describe("parseEnvironment", () => {
         BETTER_AUTH_URL: "http://solidra.example.com",
         NEXT_PUBLIC_SITE_URL: "http://solidra.example.com",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
         SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
         UPSTASH_REDIS_REST_URL: "https://redis.example.com",
         UPSTASH_REDIS_REST_TOKEN: "redis-token",
+        CRON_SECRET: "a-secure-cron-secret-with-32-characters",
       }),
     ).toThrow(/HTTPS/);
   });

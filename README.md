@@ -53,14 +53,20 @@ Better Auth uses credential accounts with registration disabled. Seed the first 
 
 ## Production deployment
 
+Production deploys are owned by the protected GitHub Actions workflow; Vercel
+Git auto-deployments from `main` are disabled so application code cannot be
+promoted before its database migration. Other branches still create isolated,
+protected previews.
+
 1. Configure all variables documented in `.env.example`.
-2. Run `pnpm install --frozen-lockfile`, `pnpm prisma:generate`, and `pnpm prisma:deploy`.
-3. Run `pnpm prisma:seed` once; repeated runs are safe.
-4. Run `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`.
-5. Verify PostgreSQL application objects exist only under `solidra` and physical identifiers are snake_case.
-6. Verify all Supabase buckets are private, `/back-office` is disallowed in `robots.txt`, and service-role credentials are absent from client bundles.
-7. Run `NODE_ENV=production pnpm verify:production`.
-8. Smoke-test both locales, authentication, contact submission, vacancy application, publication, and authorized CV download.
+2. Configure the Vercel and database secrets documented in `docs/deployment.md`.
+3. Run `pnpm install --frozen-lockfile`, `pnpm prisma:generate`, and `pnpm prisma:deploy`.
+4. Run `pnpm prisma:seed` once; repeated runs are safe.
+5. Run `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build`.
+6. Verify PostgreSQL application objects exist only under `solidra` and physical identifiers are snake_case.
+7. Verify all Supabase buckets are private, `/back-office` is disallowed in `robots.txt`, and service-role credentials are absent from client bundles.
+8. Run `NODE_ENV=production pnpm verify:production`.
+9. Smoke-test both locales, authentication, contact submission, direct file uploads, publication, and authorized CV download.
 
 ## Team
 

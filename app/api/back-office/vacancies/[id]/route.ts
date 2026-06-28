@@ -1,6 +1,8 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
+import { publicCareersPaths } from "@/lib/cache/revalidation";
 import { prisma } from "@/lib/db";
 import { invalidate } from "@/lib/cache/server";
 import { cacheKeys } from "@/lib/cache/keys";
@@ -43,6 +45,7 @@ export async function PATCH(
       }),
     ]);
     await invalidate([cacheKeys.vacancies("ID"), cacheKeys.vacancies("EN")]);
+    for (const path of publicCareersPaths()) revalidatePath(path);
     return NextResponse.json({ ok: true });
   }
   const session = await requireBackOfficePermission("content:write");
@@ -54,5 +57,6 @@ export async function PATCH(
       { status: 422 },
     );
   await updateVacancy(id, session.user.id, parsed.data);
+  for (const path of publicCareersPaths()) revalidatePath(path);
   return NextResponse.json({ ok: true });
 }

@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
@@ -5,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/security/csrf";
 import { invalidate } from "@/lib/cache/server";
 import { cacheKeys } from "@/lib/cache/keys";
+import { publicInvestorPaths } from "@/lib/cache/revalidation";
 const schema = z.object({ status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]) });
 export async function PATCH(
   request: Request,
@@ -37,5 +39,6 @@ export async function PATCH(
     }),
   ]);
   await invalidate([cacheKeys.reports("ID"), cacheKeys.reports("EN")]);
+  for (const path of publicInvestorPaths()) revalidatePath(path);
   return NextResponse.json({ ok: true });
 }

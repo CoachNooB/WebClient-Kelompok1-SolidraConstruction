@@ -1,6 +1,8 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
+import { publicCareersPaths } from "@/lib/cache/revalidation";
 import { prisma } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/security/csrf";
 const translation = z.object({
@@ -49,5 +51,6 @@ export async function POST(request: Request) {
     });
     return created;
   });
+  for (const path of publicCareersPaths()) revalidatePath(path);
   return NextResponse.json({ id: vacancy.id }, { status: 201 });
 }

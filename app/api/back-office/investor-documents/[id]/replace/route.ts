@@ -1,5 +1,7 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
+import { publicInvestorPaths } from "@/lib/cache/revalidation";
 import { replaceInvestorDocumentFile } from "@/lib/repositories/investor-document-editor";
 import { assertSameOrigin } from "@/lib/security/csrf";
 import {
@@ -35,5 +37,6 @@ export async function POST(
     actorId: session.user.id,
     file: parsed.data.file,
   });
+  for (const path of publicInvestorPaths()) revalidatePath(path);
   return NextResponse.json(result);
 }

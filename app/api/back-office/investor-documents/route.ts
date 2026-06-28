@@ -1,5 +1,7 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { isAuthResponse, requireBackOfficePermission } from "@/lib/auth/api";
+import { publicInvestorPaths } from "@/lib/cache/revalidation";
 import { prisma } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/security/csrf";
 import {
@@ -66,6 +68,7 @@ export async function POST(request: Request) {
       });
       return created;
     });
+    for (const path of publicInvestorPaths()) revalidatePath(path);
     return NextResponse.json({ id: document.id }, { status: 201 });
   } catch (error) {
     if (uploaded)

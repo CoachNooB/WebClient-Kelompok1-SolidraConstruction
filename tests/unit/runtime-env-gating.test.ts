@@ -16,4 +16,10 @@ describe("production runtime environment gating", () => {
       integrationsEnabled: false,
     });
   });
+
+  it("allows Vercel preview builds to omit production credentials", () => {
+    expect(
+      parseEnvironment({ NODE_ENV: "production", VERCEL_ENV: "preview" }),
+    ).toEqual({ integrationsEnabled: false });
+  });
 });

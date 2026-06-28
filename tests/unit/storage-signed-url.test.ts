@@ -12,6 +12,17 @@ const createSignedUrl = vi.fn(
     };
   },
 );
+const createSignedUploadUrl = vi.fn(async (...args: [string, string]) => {
+  void args;
+  return {
+    data: {
+      path: "pending/image/asset.png",
+      token: "upload-token",
+      signedUrl: "https://example.supabase.co/storage/v1/upload/sign/asset",
+    },
+    error: null,
+  };
+});
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
@@ -19,6 +30,8 @@ vi.mock("@supabase/supabase-js", () => ({
       from: (bucket: string) => ({
         createSignedUrl: (path: string, expiresIn: number) =>
           createSignedUrl(bucket, path, expiresIn),
+        createSignedUploadUrl: (path: string) =>
+          createSignedUploadUrl(bucket, path),
       }),
     },
   }),
@@ -44,6 +57,23 @@ describe("private storage URLs", () => {
       "solidra-documents",
       "documents/2026/report.pdf",
       600,
+    );
+  });
+
+  it("creates a signed token for a private direct upload", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role");
+    vi.stubEnv("SUPABASE_PUBLIC_BUCKET", "solidra-public");
+    const { createDirectUpload } = await import("@/lib/storage/supabase");
+
+    const result = await createDirectUpload("image", "png");
+
+    expect(result.bucket).toBe("solidra-public");
+    expect(result.path).toMatch(/^pending\/image\/.+\.png$/);
+    expect(result.token).toBe("upload-token");
+    expect(createSignedUploadUrl).toHaveBeenCalledWith(
+      "solidra-public",
+      result.path,
     );
   });
 });

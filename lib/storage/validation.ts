@@ -1,7 +1,7 @@
 const MB = 1024 * 1024;
-type UploadKind = "image" | "document" | "cv";
+export type UploadKind = "image" | "document" | "cv";
 
-const rules = {
+export const uploadRules = {
   image: { max: 8 * MB, types: ["image/jpeg", "image/png", "image/webp"] },
   document: { max: 15 * MB, types: ["application/pdf"] },
   cv: {
@@ -40,10 +40,11 @@ export async function validateUpload(
   file: File,
   kind: UploadKind,
 ): Promise<{ extension: string; mimeType: string; size: number }> {
-  const rule = rules[kind];
-  if (file.size === 0 || file.size > rule.max)
-    throw new Error("Invalid file size");
-  if (!rule.types.includes(file.type)) throw new Error("Unsupported MIME type");
+  const declared = validateUploadDeclaration({
+    kind,
+    mimeType: file.type,
+    size: file.size,
+  });
   const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
   const valid = signatures
     .get(file.type)
@@ -52,8 +53,23 @@ export async function validateUpload(
     );
   if (!valid) throw new Error("Invalid file signature");
   return {
-    extension: extensions[file.type],
-    mimeType: file.type,
-    size: file.size,
+    ...declared,
   };
+}
+
+export function validateUploadDeclaration({
+  kind,
+  mimeType,
+  size,
+}: {
+  kind: UploadKind;
+  mimeType: string;
+  size: number;
+}): { extension: string; mimeType: string; size: number } {
+  const rule = uploadRules[kind];
+  if (!Number.isSafeInteger(size) || size <= 0 || size > rule.max)
+    throw new Error("Invalid file size");
+  if (!rule.types.includes(mimeType))
+    throw new Error("Unsupported MIME type");
+  return { extension: extensions[mimeType], mimeType, size };
 }

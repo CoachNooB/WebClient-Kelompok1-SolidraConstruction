@@ -20,4 +20,8 @@ describe("isActivePath", () => {
     );
     expect(isActivePath("/back-office", "/back-office", true)).toBe(true);
   });
+
+  it("ignores a trailing slash when comparing exact routes", () => {
+    expect(isActivePath("/id", "/id/", true)).toBe(true);
+  });
 });

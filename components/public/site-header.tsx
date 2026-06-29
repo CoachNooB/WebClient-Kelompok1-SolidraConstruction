@@ -35,7 +35,11 @@ export function SiteHeader({
               : `/${locale}${item.url}`;
             const active =
               !item.external &&
-              isActivePath(path, target, item.url === "");
+              isActivePath(
+                path,
+                target,
+                item.url === "" || item.url === "/",
+              );
             return (
               <Link
                 key={item.id}
@@ -73,7 +77,11 @@ export function SiteHeader({
               : `/${locale}${item.url}`;
             const active =
               !item.external &&
-              isActivePath(path, target, item.url === "");
+              isActivePath(
+                path,
+                target,
+                item.url === "" || item.url === "/",
+              );
             return (
               <Link
                 onClick={() => setOpen(false)}

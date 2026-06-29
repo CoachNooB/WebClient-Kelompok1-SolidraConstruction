@@ -3,7 +3,13 @@ export function isActivePath(
   target: string,
   exact = false,
 ): boolean {
-  if (pathname === target) return true;
+  const normalizedPathname = normalizePath(pathname);
+  const normalizedTarget = normalizePath(target);
+  if (normalizedPathname === normalizedTarget) return true;
   if (exact) return false;
-  return pathname.startsWith(`${target}/`);
+  return normalizedPathname.startsWith(`${normalizedTarget}/`);
+}
+
+function normalizePath(path: string): string {
+  return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }

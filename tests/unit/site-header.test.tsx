@@ -11,7 +11,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const items = [
-  { id: "home", label: "Home", url: "", external: false, children: [] },
+  { id: "home", label: "Home", url: "/", external: false, children: [] },
   {
     id: "careers",
     label: "Careers",
@@ -54,5 +54,20 @@ describe("SiteHeader", () => {
     for (const link of screen.getAllByRole("link", { name: "Partner" })) {
       expect(link).not.toHaveAttribute("aria-current");
     }
+  });
+
+  it("marks Home active only on the locale root", () => {
+    pathname = "/en";
+    const { rerender } = render(<SiteHeader locale="en" items={items} />);
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    pathname = "/en/about";
+    rerender(<SiteHeader locale="en" items={items} />);
+    expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
+      "aria-current",
+    );
   });
 });

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { type Locale, localizePath } from "@/lib/i18n";
+import { isActivePath } from "@/lib/navigation";
 import type { NavigationDto } from "@/lib/repositories/public-content";
 
 export function SiteHeader({
@@ -28,18 +29,27 @@ export function SiteHeader({
           aria-label="Main navigation"
           className="hidden items-center gap-7 md:flex"
         >
-          {items.map((item) => (
-            <Link
-              key={item.id}
-              href={item.external ? item.url : `/${locale}${item.url}`}
-              target={item.external ? "_blank" : undefined}
-              rel={item.external ? "noopener noreferrer" : undefined}
-              prefetch={item.external ? false : undefined}
-              className="text-sm font-semibold text-slate-600 hover:text-blue-600"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {items.map((item) => {
+            const target = item.external
+              ? item.url
+              : `/${locale}${item.url}`;
+            const active =
+              !item.external &&
+              isActivePath(path, target, item.url === "");
+            return (
+              <Link
+                key={item.id}
+                href={target}
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noopener noreferrer" : undefined}
+                prefetch={item.external ? false : undefined}
+                aria-current={active ? "page" : undefined}
+                className={`text-sm font-semibold ${active ? "text-blue-600" : "text-slate-600 hover:text-blue-600"}`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
           <Link
             className="rounded border px-3 py-2 text-xs font-bold"
             href={localizePath(path, locale === "id" ? "en" : "id")}
@@ -57,17 +67,26 @@ export function SiteHeader({
       </div>
       {open && (
         <nav className="container grid gap-1 border-t py-3 md:hidden">
-          {items.map((item) => (
-            <Link
-              onClick={() => setOpen(false)}
-              className="min-h-11 py-3 font-semibold"
-              key={item.id}
-              href={item.external ? item.url : `/${locale}${item.url}`}
-              prefetch={item.external ? false : undefined}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {items.map((item) => {
+            const target = item.external
+              ? item.url
+              : `/${locale}${item.url}`;
+            const active =
+              !item.external &&
+              isActivePath(path, target, item.url === "");
+            return (
+              <Link
+                onClick={() => setOpen(false)}
+                className={`min-h-11 py-3 font-semibold ${active ? "text-blue-600" : ""}`}
+                key={item.id}
+                href={target}
+                prefetch={item.external ? false : undefined}
+                aria-current={active ? "page" : undefined}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
           <Link
             href={localizePath(path, locale === "id" ? "en" : "id")}
             className="py-3 font-bold text-blue-600"

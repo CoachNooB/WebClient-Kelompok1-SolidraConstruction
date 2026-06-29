@@ -18,6 +18,7 @@ import {
   canAccessBackOfficeSection,
 } from "@/lib/auth/back-office-sections";
 import type { StaffRole } from "@/lib/auth/permissions";
+import { isActivePath } from "@/lib/navigation";
 
 const items = [
   ["", "Dashboard", LayoutDashboard, null],
@@ -45,9 +46,7 @@ export function Sidebar({ role }: { role: StaffRole }) {
     <nav className="mt-8 grid gap-2">
       {visibleItems.map(([href, label, Icon]) => {
         const target = `/back-office/${href}`.replace(/\/$/, "");
-        const active =
-          pathname === target ||
-          Boolean(href && pathname.startsWith(`${target}/`));
+        const active = isActivePath(pathname, target, href === "");
         return (
           <Link
             onClick={() => setOpen(false)}
